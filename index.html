@@ -134,7 +134,7 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-10-1';
+const BUILD_ID = 'kabu-kanri-2026-08-10-2';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -187,23 +187,6 @@ function saveCols(list,val){
   try{ localStorage.setItem('kabu-columns-'+list+'-v1', JSON.stringify(val)); }catch(e){}
 }
 
-/* ---------- state ---------- */
-let state = {
-  watchlist: loadArr(KEYS.watchlist),
-  holdings: loadArr(KEYS.holdings),
-  transactions: loadArr(KEYS.transactions),
-  priceCache: loadObj(KEYS.pricecache),
-};
-let columns = {
-  watchlist: loadCols('watchlist'),
-  holdings: loadCols('holdings'),
-  transactions: loadCols('transactions'),
-};
-let activeTab = 'watchlist';
-let tagFilter = { watchlist:new Set(), holdings:new Set(), transactions:new Set() };
-let searchText = '';
-let sortKey = { watchlist:'addedAt_desc', holdings:'name_asc', transactions:'date_desc' };
-
 /* ---------- column definitions ---------- */
 const COLUMN_DEFS = {
   watchlist:[
@@ -249,6 +232,23 @@ const COLUMN_DEFS = {
     {key:'memo', label:'メモ', defaultVisible:false},
   ],
 };
+
+/* ---------- state ---------- */
+let state = {
+  watchlist: loadArr(KEYS.watchlist),
+  holdings: loadArr(KEYS.holdings),
+  transactions: loadArr(KEYS.transactions),
+  priceCache: loadObj(KEYS.pricecache),
+};
+let columns = {
+  watchlist: loadCols('watchlist'),
+  holdings: loadCols('holdings'),
+  transactions: loadCols('transactions'),
+};
+let activeTab = 'watchlist';
+let tagFilter = { watchlist:new Set(), holdings:new Set(), transactions:new Set() };
+let searchText = '';
+let sortKey = { watchlist:'addedAt_desc', holdings:'name_asc', transactions:'date_desc' };
 
 /* ---------- utils ---------- */
 function uid(){ return 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
