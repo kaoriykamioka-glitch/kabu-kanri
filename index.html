@@ -135,7 +135,7 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-10-4';
+const BUILD_ID = 'kabu-kanri-2026-08-10-5';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -652,6 +652,7 @@ function openForm(list, item){
     closeSheet('formOverlay');
     toast('保存しました');
     render();
+    if((list==='watchlist' || list==='holdings') && data.ticker){ fetchPrices(); }
   };
   openSheet('formOverlay');
 }
