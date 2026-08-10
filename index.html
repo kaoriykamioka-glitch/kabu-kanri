@@ -135,7 +135,7 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-10-3';
+const BUILD_ID = 'kabu-kanri-2026-08-10-4';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -434,7 +434,7 @@ function fieldDisplay(list, key, item, metrics){
     case 'name': return item.name;
     case 'qty': return fmtNum(item.qty,0);
     case 'avgCost': return fmtNum(item.avgCost,2);
-    case 'price': return metrics.price!=null ? fmtNum(metrics.price,2)+(item.manualPrice?'(手動)':'') : '未取得';
+    case 'price': return list==='transactions' ? fmtNum(item.price,2) : (metrics.price!=null ? fmtNum(metrics.price,2)+(item.manualPrice?'(手動)':'') : '未取得');
     case 'changePct': return metrics.changePct!=null ? fmtPct(metrics.changePct) : '-';
     case 'targetPrice': return item.targetPrice ? fmtNum(item.targetPrice,2) : '-';
     case 'diffToTarget': return metrics.diffToTarget!=null ? fmtPct(metrics.diffToTarget) : '-';
