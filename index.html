@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>株管理</title>
+<style>
+:root{
+  --ink:#2b2925; --ink-soft:#6b6558; --paper:#f7f4ee; --card:#ffffff;
+  --line:#e4ddd0; --accent:#8a6d3b; --radius:14px;
+  --gain:#1a7f4b; --loss:#c0392b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Hiragino Mincho ProN","Yu Mincho","BIZ UDMincho",serif;
+  padding-bottom:calc(88px + env(safe-area-inset-bottom));}
+header{position:sticky;top:0;z-index:10;background:var(--paper);
+  border-bottom:1px solid var(--line);padding:14px 16px 0;}
+h1{font-size:19px;margin:0 0 10px;}
+.tabs{display:flex;gap:6px;}
+.tab{flex:1;text-align:center;padding:10px 4px;border-radius:10px 10px 0 0;
+  color:var(--ink-soft);font-size:14px;cursor:pointer;border:1px solid transparent;border-bottom:none;}
+.tab.on{background:var(--card);color:var(--ink);font-weight:bold;border-color:var(--line);}
+main{max-width:640px;margin:0 auto;padding:14px 12px;}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.toolbar input[type=search]{flex:1;min-width:120px;padding:9px 10px;border:1px solid var(--line);
+  border-radius:10px;font-size:16px;background:var(--card);color:var(--ink);}
+.toolbar select{padding:9px 8px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--ink);font-size:14px;}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);
+  color:var(--ink);font-size:13px;cursor:pointer;white-space:nowrap;}
+.btn:active{opacity:.7}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;margin-bottom:6px;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink-soft);font-size:12px;cursor:pointer;}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.summary{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;}
+.sum-box{flex:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 14px;min-width:110px;}
+.sum-box .lbl{font-size:11px;color:var(--ink-soft);}
+.sum-box .val{font-size:16px;font-weight:bold;margin-top:2px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;}
+.card .spine{position:absolute;left:0;top:0;bottom:0;width:5px;}
+.card .spine.gain{background:var(--gain);}
+.card .spine.loss{background:var(--loss);}
+.card .spine.flat{background:var(--line);}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:8px;}
+.card-title{font-size:15px;font-weight:bold;}
+.card-sub{font-size:12px;color:var(--ink-soft);}
+.card-actions{display:flex;gap:6px;}
+.icon-btn{background:none;border:none;font-size:15px;cursor:pointer;color:var(--ink-soft);padding:2px 4px;}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:13px;}
+.kv{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:3px 0;}
+.kv .k{color:var(--ink-soft);}
+.kv .v{font-weight:bold;}
+.kv .v.gain{color:var(--gain);}
+.kv .v.loss{color:var(--loss);}
+.tagrow{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;}
+.tag-pill{font-size:11px;background:var(--paper);border:1px solid var(--line);border-radius:999px;
+  padding:2px 8px;color:var(--ink-soft);}
+.empty{text-align:center;color:var(--ink-soft);padding:40px 10px;font-size:13px;}
+.fab{position:fixed;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));
+  width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;
+  border:none;font-size:26px;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer;z-index:5;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:20;}
+.overlay.show{display:block;}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);
+  border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;padding:16px 16px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .25s;z-index:21;}
+.overlay.show .sheet{transform:translateY(0);}
+.sheet h2{margin:0 0 12px;font-size:16px;}
+.field{margin-bottom:10px;}
+.field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
+.field input,.field select,.field textarea{width:100%;padding:9px 10px;border:1px solid var(--line);
+  border-radius:10px;font-size:16px;background:var(--paper);color:var(--ink);font-family:inherit;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sheet-actions{display:flex;gap:8px;margin-top:16px;}
+.sheet-actions .btn{flex:1;text-align:center;}
+.col-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);}
+.col-item label{flex:1;font-size:14px;}
+.col-item .updown{display:flex;gap:4px;}
+.col-item button{background:var(--paper);border:1px solid var(--line);border-radius:6px;
+  width:26px;height:26px;cursor:pointer;color:var(--ink);}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;
+  opacity:0;transition:opacity .3s;z-index:30;pointer-events:none;}
+.toast.show{opacity:.92;}
+.hint{font-size:11px;color:var(--ink-soft);margin:2px 0 10px;}
+.footer-actions{display:flex;gap:8px;justify-content:center;margin:20px 0 6px;}
+.footer-actions .btn{font-size:12px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>株管理</h1>
+  <div class="tabs">
+    <div class="tab on" data-tab="watchlist">ウォッチリスト</div>
+    <div class="tab" data-tab="holdings">保有</div>
+    <div class="tab" data-tab="transactions">取引</div>
+  </div>
+</header>
+<main>
+  <div class="toolbar">
+    <input type="search" id="searchInput" placeholder="銘柄名・コードで検索">
+    <select id="sortSelect"></select>
+    <button class="btn" id="colBtn">列を編集</button>
+    <button class="btn" id="fetchBtn">価格を更新</button>
+  </div>
+  <div class="chips" id="tagChips"></div>
+  <div class="summary" id="summaryBox"></div>
+  <div class="hint" id="fetchHint"></div>
+  <div id="listArea"></div>
+  <div class="footer-actions">
+    <button class="btn" id="exportBtn">JSON書き出し</button>
+    <button class="btn" id="importBtn">JSON読み込み</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
+</main>
+<button class="fab" id="addFab">＋</button>
+
+<div class="overlay" id="formOverlay" onclick="if(event.target===this)closeSheet('formOverlay')">
+  <div class="sheet" id="formSheet"></div>
+</div>
+<div class="overlay" id="colOverlay" onclick="if(event.target===this)closeSheet('colOverlay')">
+  <div class="sheet" id="colSheet"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BUILD_ID = 'kabu-kanri-2026-08-10-1';
+(function(){
+  try{
+    if(sessionStorage.getItem('kabu-build-checked')) return;
+    fetch(location.pathname, {cache:'no-store'}).then(r=>r.text()).then(html=>{
+      const m = html.match(/BUILD_ID\s*=\s*'([^']+)'/);
+      if(m && m[1] !== BUILD_ID){
+        sessionStorage.setItem('kabu-build-checked','1');
+        location.href = location.pathname + '?v=' + Date.now();
+      }
+    }).catch(()=>{});
+  }catch(e){}
+})();
+
+/* ---------- storage ---------- */
+const KEYS = {
+  watchlist:'kabu-watchlist-v1',
+  holdings:'kabu-holdings-v1',
+  transactions:'kabu-transactions-v1',
+  pricecache:'kabu-pricecache-v1',
+};
+let storageOK = true;
+function loadArr(key){
+  try{
+    localStorage.setItem('__t__','1'); localStorage.removeItem('__t__');
+    const s = localStorage.getItem(key);
+    return s ? JSON.parse(s) : [];
+  }catch(e){ storageOK=false; return []; }
+}
+function saveArr(key,val){
+  if(!storageOK) return;
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+}
+function loadObj(key){
+  try{ const s=localStorage.getItem(key); return s?JSON.parse(s):{}; }catch(e){ return {}; }
+}
+function saveObj(key,val){
+  if(!storageOK) return;
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+}
+function loadCols(list){
+  const key = 'kabu-columns-'+list+'-v1';
+  try{
+    const s = localStorage.getItem(key);
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  return COLUMN_DEFS[list].map(c=>({key:c.key, visible:c.defaultVisible}));
+}
+function saveCols(list,val){
+  if(!storageOK) return;
+  try{ localStorage.setItem('kabu-columns-'+list+'-v1', JSON.stringify(val)); }catch(e){}
+}
+
+/* ---------- state ---------- */
+let state = {
+  watchlist: loadArr(KEYS.watchlist),
+  holdings: loadArr(KEYS.holdings),
+  transactions: loadArr(KEYS.transactions),
+  priceCache: loadObj(KEYS.pricecache),
+};
+let columns = {
+  watchlist: loadCols('watchlist'),
+  holdings: loadCols('holdings'),
+  transactions: loadCols('transactions'),
+};
+let activeTab = 'watchlist';
+let tagFilter = { watchlist:new Set(), holdings:new Set(), transactions:new Set() };
+let searchText = '';
+let sortKey = { watchlist:'addedAt_desc', holdings:'name_asc', transactions:'date_desc' };
+
+/* ---------- column definitions ---------- */
+const COLUMN_DEFS = {
+  watchlist:[
+    {key:'market', label:'市場', defaultVisible:true},
+    {key:'ticker', label:'コード', defaultVisible:true},
+    {key:'name', label:'銘柄名', defaultVisible:true},
+    {key:'price', label:'現在値', defaultVisible:true},
+    {key:'changePct', label:'前日比%', defaultVisible:true},
+    {key:'targetPrice', label:'目標株価', defaultVisible:true},
+    {key:'diffToTarget', label:'目標との差%', defaultVisible:false},
+    {key:'tags', label:'タグ', defaultVisible:true},
+    {key:'memo', label:'メモ', defaultVisible:false},
+    {key:'addedAt', label:'追加日', defaultVisible:false},
+  ],
+  holdings:[
+    {key:'market', label:'市場', defaultVisible:true},
+    {key:'ticker', label:'コード', defaultVisible:true},
+    {key:'name', label:'銘柄名', defaultVisible:true},
+    {key:'qty', label:'数量', defaultVisible:true},
+    {key:'avgCost', label:'取得単価', defaultVisible:true},
+    {key:'price', label:'現在値', defaultVisible:true},
+    {key:'costAmount', label:'取得額', defaultVisible:false},
+    {key:'evalAmount', label:'評価額', defaultVisible:true},
+    {key:'pl', label:'評価損益', defaultVisible:true},
+    {key:'plPct', label:'評価損益%', defaultVisible:true},
+    {key:'jpyEvalAmount', label:'評価額(円換算)', defaultVisible:false},
+    {key:'tags', label:'タグ', defaultVisible:true},
+    {key:'memo', label:'メモ', defaultVisible:false},
+  ],
+  transactions:[
+    {key:'date', label:'日付', defaultVisible:true},
+    {key:'market', label:'市場', defaultVisible:true},
+    {key:'ticker', label:'コード', defaultVisible:true},
+    {key:'name', label:'銘柄名', defaultVisible:true},
+    {key:'side', label:'売買', defaultVisible:true},
+    {key:'qty', label:'数量', defaultVisible:true},
+    {key:'price', label:'単価', defaultVisible:true},
+    {key:'fee', label:'手数料', defaultVisible:false},
+    {key:'amount', label:'約定代金', defaultVisible:true},
+    {key:'costBasisAtSale', label:'売却時取得単価', defaultVisible:false},
+    {key:'realizedPL', label:'実現損益', defaultVisible:true},
+    {key:'tags', label:'タグ', defaultVisible:true},
+    {key:'memo', label:'メモ', defaultVisible:false},
+  ],
+};
+
+/* ---------- utils ---------- */
+function uid(){ return 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function fmtNum(n, decimals){
+  if(n===null||n===undefined||isNaN(n)) return '-';
+  return Number(n).toLocaleString('ja-JP',{minimumFractionDigits:decimals||0, maximumFractionDigits:decimals||2});
+}
+function fmtPct(n){
+  if(n===null||n===undefined||isNaN(n)) return '-';
+  return (n>0?'+':'')+n.toFixed(2)+'%';
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function openSheet(id){ document.getElementById(id).classList.add('show'); }
+function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
+function priceKey(market,ticker){ return market+':'+ticker.toUpperCase(); }
+
+/* ---------- calculations ---------- */
+function getPrice(item){
+  if(item.manualPrice!==undefined && item.manualPrice!==null && item.manualPrice!=='') return Number(item.manualPrice);
+  const c = state.priceCache[priceKey(item.market,item.ticker)];
+  return c ? c.price : null;
+}
+function getFxRate(){
+  const c = state.priceCache['FX:JPY=X'];
+  return c ? c.price : null;
+}
+function watchlistMetrics(item){
+  const price = getPrice(item);
+  const cache = state.priceCache[priceKey(item.market,item.ticker)];
+  const changePct = cache ? cache.changePct : null;
+  const diffToTarget = (price!=null && item.targetPrice) ? ((price-item.targetPrice)/item.targetPrice*100) : null;
+  return {price, changePct, diffToTarget};
+}
+function holdingMetrics(item){
+  const price = getPrice(item);
+  const qty = Number(item.qty)||0;
+  const avgCost = Number(item.avgCost)||0;
+  const costAmount = qty*avgCost;
+  const evalAmount = price!=null ? qty*price : null;
+  const pl = evalAmount!=null ? evalAmount-costAmount : null;
+  const plPct = (pl!=null && costAmount) ? pl/costAmount*100 : null;
+  let jpyEvalAmount = evalAmount;
+  if(item.market==='US' && evalAmount!=null){
+    const fx = getFxRate();
+    jpyEvalAmount = fx ? evalAmount*fx : null;
+  }
+  return {price, costAmount, evalAmount, pl, plPct, jpyEvalAmount};
+}
+function transactionMetrics(item){
+  const qty = Number(item.qty)||0;
+  const price = Number(item.price)||0;
+  const fee = Number(item.fee)||0;
+  const amount = item.side==='buy' ? qty*price+fee : qty*price-fee;
+  let realizedPL = null;
+  if(item.side==='sell' && item.costBasisAtSale){
+    realizedPL = (price - Number(item.costBasisAtSale))*qty - fee;
+  }
+  return {amount, realizedPL};
+}
+
+/* ---------- price fetch ---------- */
+async function fetchPrices(){
+  const symMap = {};
+  [...state.watchlist, ...state.holdings].forEach(it=>{
+    if(!it.ticker) return;
+    const ysym = it.market==='JP' ? (it.ticker+'.T') : it.ticker;
+    symMap[ysym] = {market:it.market, ticker:it.ticker};
+  });
+  const symbols = Object.keys(symMap);
+  if(symbols.length===0){ document.getElementById('fetchHint').textContent=''; return; }
+  symbols.push('JPY=X');
+  const hint = document.getElementById('fetchHint');
+  hint.textContent = '価格を取得中...';
+  const target = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(symbols.join(','));
+  const proxied = 'https://api.allorigins.win/raw?url='+encodeURIComponent(target);
+  try{
+    const res = await fetch(proxied);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const results = data && data.quoteResponse && data.quoteResponse.result || [];
+    if(results.length===0) throw new Error('empty result');
+    const now = Date.now();
+    results.forEach(r=>{
+      const price = r.regularMarketPrice;
+      const changePct = r.regularMarketChangePercent;
+      if(r.symbol==='JPY=X'){
+        state.priceCache['FX:JPY=X'] = {price, changePct, fetchedAt:now};
+      }else{
+        const info = symMap[r.symbol];
+        if(info) state.priceCache[priceKey(info.market,info.ticker)] = {price, changePct, fetchedAt:now};
+      }
+    });
+    saveObj(KEYS.pricecache, state.priceCache);
+    hint.textContent = '最終取得: '+new Date(now).toLocaleString('ja-JP');
+    toast('価格を更新しました');
+  }catch(e){
+    hint.textContent = '取得失敗(前回値を使用中) — 手動入力欄で上書きできます';
+    toast('価格取得に失敗しました');
+  }
+  render();
+}
+
+/* ---------- rendering ---------- */
+const SORT_OPTIONS = {
+  watchlist:[
+    {v:'addedAt_desc', l:'追加日が新しい順'},
+    {v:'addedAt_asc', l:'追加日が古い順'},
+    {v:'name_asc', l:'銘柄名順'},
+    {v:'changePct_desc', l:'前日比が高い順'},
+  ],
+  holdings:[
+    {v:'name_asc', l:'銘柄名順'},
+    {v:'pl_desc', l:'評価損益が高い順'},
+    {v:'pl_asc', l:'評価損益が低い順'},
+    {v:'evalAmount_desc', l:'評価額が高い順'},
+  ],
+  transactions:[
+    {v:'date_desc', l:'日付が新しい順'},
+    {v:'date_asc', l:'日付が古い順'},
+  ],
+};
+
+function allTags(list){
+  const set = new Set();
+  state[list].forEach(it=>(it.tags||[]).forEach(t=>set.add(t)));
+  return [...set].sort();
+}
+
+function applySearchSortFilter(list){
+  let items = state[list].slice();
+  if(searchText){
+    const q = searchText.toLowerCase();
+    items = items.filter(it=> (it.name||'').toLowerCase().includes(q) || (it.ticker||'').toLowerCase().includes(q));
+  }
+  if(tagFilter[list].size>0){
+    items = items.filter(it=> (it.tags||[]).some(t=>tagFilter[list].has(t)));
+  }
+  const sk = sortKey[list];
+  const metricsFn = list==='watchlist'?watchlistMetrics:list==='holdings'?holdingMetrics:transactionMetrics;
+  items.sort((a,b)=>{
+    if(sk==='name_asc') return (a.name||'').localeCompare(b.name||'','ja');
+    if(sk==='addedAt_desc') return (b.addedAt||'').localeCompare(a.addedAt||'');
+    if(sk==='addedAt_asc') return (a.addedAt||'').localeCompare(b.addedAt||'');
+    if(sk==='date_desc') return (b.date||'').localeCompare(a.date||'');
+    if(sk==='date_asc') return (a.date||'').localeCompare(b.date||'');
+    if(sk==='changePct_desc') return (metricsFn(b).changePct||-999)-(metricsFn(a).changePct||-999);
+    if(sk==='pl_desc') return (metricsFn(b).pl||-Infinity)-(metricsFn(a).pl||-Infinity);
+    if(sk==='pl_asc') return (metricsFn(a).pl||Infinity)-(metricsFn(b).pl||Infinity);
+    if(sk==='evalAmount_desc') return (metricsFn(b).evalAmount||-Infinity)-(metricsFn(a).evalAmount||-Infinity);
+    return 0;
+  });
+  return items;
+}
+
+function fieldDisplay(list, key, item, metrics){
+  switch(key){
+    case 'market': return item.market;
+    case 'ticker': return item.ticker;
+    case 'name': return item.name;
+    case 'qty': return fmtNum(item.qty,0);
+    case 'avgCost': return fmtNum(item.avgCost,2);
+    case 'price': return metrics.price!=null ? fmtNum(metrics.price,2)+(item.manualPrice?'(手動)':'') : '未取得';
+    case 'changePct': return metrics.changePct!=null ? fmtPct(metrics.changePct) : '-';
+    case 'targetPrice': return item.targetPrice ? fmtNum(item.targetPrice,2) : '-';
+    case 'diffToTarget': return metrics.diffToTarget!=null ? fmtPct(metrics.diffToTarget) : '-';
+    case 'costAmount': return fmtNum(metrics.costAmount,0);
+    case 'evalAmount': return metrics.evalAmount!=null ? fmtNum(metrics.evalAmount,0) : '-';
+    case 'pl': return metrics.pl!=null ? fmtNum(metrics.pl,0) : '-';
+    case 'plPct': return metrics.plPct!=null ? fmtPct(metrics.plPct) : '-';
+    case 'jpyEvalAmount': return metrics.jpyEvalAmount!=null ? '¥'+fmtNum(metrics.jpyEvalAmount,0) : '-';
+    case 'tags': return (item.tags||[]).join(', ')||'-';
+    case 'memo': return item.memo||'-';
+    case 'addedAt': return item.addedAt||'-';
+    case 'date': return item.date;
+    case 'side': return item.side==='buy'?'買い':'売り';
+    case 'fee': return fmtNum(item.fee,0);
+    case 'amount': return fmtNum(metrics.amount,0);
+    case 'costBasisAtSale': return item.costBasisAtSale ? fmtNum(item.costBasisAtSale,2) : '-';
+    case 'realizedPL': return metrics.realizedPL!=null ? fmtNum(metrics.realizedPL,0) : '-';
+    default: return '';
+  }
+}
+function isGainField(key){ return ['price','changePct','diffToTarget','pl','plPct','realizedPL'].includes(key); }
+function gainClass(list, item, metrics, key){
+  if(!isGainField(key)) return '';
+  let v;
+  if(key==='pl'||key==='plPct') v = metrics.pl;
+  else if(key==='realizedPL') v = metrics.realizedPL;
+  else if(key==='changePct') v = metrics.changePct;
+  else if(key==='diffToTarget') v = metrics.diffToTarget;
+  else return '';
+  if(v==null) return '';
+  return v>0?'gain':v<0?'loss':'';
+}
+
+function renderSummary(){
+  const box = document.getElementById('summaryBox');
+  box.innerHTML='';
+  if(activeTab!=='holdings'){ box.style.display='none'; return; }
+  box.style.display='flex';
+  let totalCost=0, totalEval=0, hasEval=false;
+  state.holdings.forEach(it=>{
+    const m = holdingMetrics(it);
+    totalCost += m.costAmount||0;
+    if(it.market==='US'){
+      if(m.jpyEvalAmount!=null){ totalEval+=m.jpyEvalAmount; hasEval=true; }
+    }else if(m.evalAmount!=null){ totalEval+=m.evalAmount; hasEval=true; }
+  });
+  const totalPL = hasEval ? totalEval-totalCost : null;
+  const boxes = [
+    ['取得額合計', '¥'+fmtNum(totalCost,0)],
+    ['評価額合計', hasEval?'¥'+fmtNum(totalEval,0):'-'],
+    ['評価損益合計', totalPL!=null?'¥'+fmtNum(totalPL,0):'-'],
+    ['保有銘柄数', state.holdings.length+'件'],
+  ];
+  boxes.forEach(([lbl,val])=>{
+    const d = document.createElement('div'); d.className='sum-box';
+    d.innerHTML = `<div class="lbl">${lbl}</div><div class="val">${val}</div>`;
+    box.appendChild(d);
+  });
+}
+
+function renderTagChips(){
+  const el = document.getElementById('tagChips');
+  el.innerHTML='';
+  const tags = allTags(activeTab);
+  tags.forEach(t=>{
+    const c = document.createElement('div');
+    c.className = 'chip'+(tagFilter[activeTab].has(t)?' on':'');
+    c.textContent = t;
+    c.onclick = ()=>{
+      if(tagFilter[activeTab].has(t)) tagFilter[activeTab].delete(t); else tagFilter[activeTab].add(t);
+      render();
+    };
+    el.appendChild(c);
+  });
+}
+
+function renderList(){
+  const area = document.getElementById('listArea');
+  area.innerHTML='';
+  const items = applySearchSortFilter(activeTab);
+  if(items.length===0){
+    area.innerHTML = '<div class="empty">まだ登録がありません。右下の＋から追加してください。</div>';
+    return;
+  }
+  const visibleCols = columns[activeTab].filter(c=>c.visible).map(c=>c.key);
+  const defMap = {}; COLUMN_DEFS[activeTab].forEach(c=>defMap[c.key]=c.label);
+  const metricsFn = activeTab==='watchlist'?watchlistMetrics:activeTab==='holdings'?holdingMetrics:transactionMetrics;
+  items.forEach(item=>{
+    const metrics = metricsFn(item);
+    const card = document.createElement('div'); card.className='card';
+    let spineClass='flat';
+    if(activeTab==='holdings' && metrics.pl!=null) spineClass = metrics.pl>0?'gain':metrics.pl<0?'loss':'flat';
+    if(activeTab==='watchlist' && metrics.changePct!=null) spineClass = metrics.changePct>0?'gain':metrics.changePct<0?'loss':'flat';
+    if(activeTab==='transactions' && metrics.realizedPL!=null) spineClass = metrics.realizedPL>0?'gain':metrics.realizedPL<0?'loss':'flat';
+    card.innerHTML = `<div class="spine ${spineClass}"></div>`;
+    const head = document.createElement('div'); head.className='card-head';
+    const title = (item.name||item.ticker||'') + (item.ticker?' ('+item.ticker+')':'');
+    head.innerHTML = `<div><div class="card-title"></div><div class="card-sub">${item.market||''}</div></div>
+      <div class="card-actions"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn" data-act="del">🗑</button></div>`;
+    head.querySelector('.card-title').textContent = title;
+    head.querySelector('[data-act="edit"]').onclick = ()=>openForm(activeTab, item);
+    head.querySelector('[data-act="del"]').onclick = ()=>{
+      if(confirm('削除しますか?')){
+        state[activeTab] = state[activeTab].filter(x=>x.id!==item.id);
+        saveArr(KEYS[activeTab], state[activeTab]);
+        render();
+      }
+    };
+    card.appendChild(head);
+    const grid = document.createElement('div'); grid.className='kv-grid';
+    visibleCols.filter(k=>k!=='tags').forEach(k=>{
+      const kv = document.createElement('div'); kv.className='kv';
+      const gcls = gainClass(activeTab,item,metrics,k);
+      kv.innerHTML = `<span class="k">${defMap[k]}</span><span class="v ${gcls}"></span>`;
+      kv.querySelector('.v').textContent = fieldDisplay(activeTab,k,item,metrics);
+      grid.appendChild(kv);
+    });
+    card.appendChild(grid);
+    if(visibleCols.includes('tags') && (item.tags||[]).length){
+      const tr = document.createElement('div'); tr.className='tagrow';
+      item.tags.forEach(t=>{ const p=document.createElement('span'); p.className='tag-pill'; p.textContent=t; tr.appendChild(p); });
+      card.appendChild(tr);
+    }
+    area.appendChild(card);
+  });
+}
+
+function renderSortSelect(){
+  const sel = document.getElementById('sortSelect');
+  sel.innerHTML='';
+  SORT_OPTIONS[activeTab].forEach(o=>{
+    const opt = document.createElement('option'); opt.value=o.v; opt.textContent=o.l;
+    if(o.v===sortKey[activeTab]) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function render(){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===activeTab));
+  renderSortSelect();
+  renderTagChips();
+  renderSummary();
+  renderList();
+}
+
+/* ---------- forms ---------- */
+function fieldsForList(list){
+  if(list==='watchlist') return [
+    {key:'market', label:'市場', type:'select', options:[['JP','日本株'],['US','米国株']]},
+    {key:'ticker', label:'銘柄コード(米国株はティッカー、日本株は4桁数字)', type:'text'},
+    {key:'name', label:'銘柄名', type:'text'},
+    {key:'targetPrice', label:'目標株価', type:'number'},
+    {key:'manualPrice', label:'現在値(手動入力・任意)', type:'number'},
+    {key:'tags', label:'タグ(カンマ区切り)', type:'text'},
+    {key:'memo', label:'メモ', type:'textarea'},
+  ];
+  if(list==='holdings') return [
+    {key:'market', label:'市場', type:'select', options:[['JP','日本株'],['US','米国株']]},
+    {key:'ticker', label:'銘柄コード', type:'text'},
+    {key:'name', label:'銘柄名', type:'text'},
+    {key:'qty', label:'数量', type:'number'},
+    {key:'avgCost', label:'取得単価', type:'number'},
+    {key:'manualPrice', label:'現在値(手動入力・任意)', type:'number'},
+    {key:'tags', label:'タグ(カンマ区切り)', type:'text'},
+    {key:'memo', label:'メモ', type:'textarea'},
+  ];
+  return [
+    {key:'date', label:'日付', type:'date'},
+    {key:'market', label:'市場', type:'select', options:[['JP','日本株'],['US','米国株']]},
+    {key:'ticker', label:'銘柄コード', type:'text'},
+    {key:'name', label:'銘柄名', type:'text'},
+    {key:'side', label:'売買', type:'select', options:[['buy','買い'],['sell','売り']]},
+    {key:'qty', label:'数量', type:'number'},
+    {key:'price', label:'単価', type:'number'},
+    {key:'fee', label:'手数料', type:'number'},
+    {key:'costBasisAtSale', label:'売却時の取得単価(売りの実現損益計算用・任意)', type:'number'},
+    {key:'tags', label:'タグ(カンマ区切り)', type:'text'},
+    {key:'memo', label:'メモ', type:'textarea'},
+  ];
+}
+function openForm(list, item){
+  const isEdit = !!item;
+  const fields = fieldsForList(list);
+  const sheet = document.getElementById('formSheet');
+  let html = `<h2>${isEdit?'編集':'追加'} - ${list==='watchlist'?'ウォッチリスト':list==='holdings'?'保有':'取引'}</h2>`;
+  fields.forEach(f=>{
+    const val = item ? (f.key==='tags' ? (item.tags||[]).join(', ') : (item[f.key]!==undefined?item[f.key]:'')) : '';
+    html += `<div class="field"><label>${f.label}</label>`;
+    if(f.type==='select'){
+      html += `<select data-key="${f.key}">`+f.options.map(([v,l])=>`<option value="${v}" ${val===v?'selected':''}>${l}</option>`).join('')+`</select>`;
+    }else if(f.type==='textarea'){
+      html += `<textarea data-key="${f.key}" rows="2">${val}</textarea>`;
+    }else{
+      html += `<input data-key="${f.key}" type="${f.type}" value="${val}">`;
+    }
+    html += `</div>`;
+  });
+  html += `<div class="sheet-actions"><button class="btn" id="cancelFormBtn">キャンセル</button><button class="btn primary" id="saveFormBtn">保存</button></div>`;
+  sheet.innerHTML = html;
+  sheet.querySelector('#cancelFormBtn').onclick = ()=>closeSheet('formOverlay');
+  sheet.querySelector('#saveFormBtn').onclick = ()=>{
+    const data = item ? {...item} : {id:uid(), addedAt:new Date().toISOString().slice(0,10)};
+    fields.forEach(f=>{
+      const el = sheet.querySelector(`[data-key="${f.key}"]`);
+      let v = el.value;
+      if(f.key==='tags'){ data.tags = v.split(',').map(s=>s.trim()).filter(Boolean); return; }
+      if(f.type==='number'){ data[f.key] = v===''?undefined:Number(v); return; }
+      data[f.key] = v;
+    });
+    if(!data.name && !data.ticker){ toast('銘柄名かコードを入力してください'); return; }
+    const arr = state[list];
+    const idx = arr.findIndex(x=>x.id===data.id);
+    if(idx>=0) arr[idx]=data; else arr.push(data);
+    saveArr(KEYS[list], arr);
+    closeSheet('formOverlay');
+    toast('保存しました');
+    render();
+  };
+  openSheet('formOverlay');
+}
+
+/* ---------- column editor ---------- */
+function openColumnEditor(){
+  const list = activeTab;
+  const sheet = document.getElementById('colSheet');
+  const defMap = {}; COLUMN_DEFS[list].forEach(c=>defMap[c.key]=c.label);
+  function renderColList(){
+    let html = `<h2>列を編集</h2><div id="colListInner">`;
+    columns[list].forEach((c,i)=>{
+      html += `<div class="col-item">
+        <input type="checkbox" data-idx="${i}" class="colcheck" ${c.visible?'checked':''}>
+        <label>${defMap[c.key]}</label>
+        <div class="updown">
+          <button data-idx="${i}" data-dir="up">▲</button>
+          <button data-idx="${i}" data-dir="down">▼</button>
+        </div>
+      </div>`;
+    });
+    html += `</div><div class="sheet-actions"><button class="btn" id="colCancelBtn">閉じる</button><button class="btn primary" id="colSaveBtn">保存</button></div>`;
+    sheet.innerHTML = html;
+    sheet.querySelectorAll('.colcheck').forEach(cb=>{
+      cb.onchange = ()=>{ columns[list][Number(cb.dataset.idx)].visible = cb.checked; };
+    });
+    sheet.querySelectorAll('.updown button').forEach(btn=>{
+      btn.onclick = ()=>{
+        const i = Number(btn.dataset.idx);
+        const dir = btn.dataset.dir;
+        const j = dir==='up' ? i-1 : i+1;
+        if(j<0 || j>=columns[list].length) return;
+        [columns[list][i], columns[list][j]] = [columns[list][j], columns[list][i]];
+        renderColList();
+      };
+    });
+    sheet.querySelector('#colCancelBtn').onclick = ()=>closeSheet('colOverlay');
+    sheet.querySelector('#colSaveBtn').onclick = ()=>{
+      saveCols(list, columns[list]);
+      closeSheet('colOverlay');
+      render();
+      toast('列設定を保存しました');
+    };
+  }
+  renderColList();
+  openSheet('colOverlay');
+}
+
+/* ---------- export / import ---------- */
+function exportJSON(){
+  const payload = {watchlist:state.watchlist, holdings:state.holdings, transactions:state.transactions, exportedAt:new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'kabu-kanri-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(data.watchlist) state.watchlist = data.watchlist;
+      if(data.holdings) state.holdings = data.holdings;
+      if(data.transactions) state.transactions = data.transactions;
+      saveArr(KEYS.watchlist, state.watchlist);
+      saveArr(KEYS.holdings, state.holdings);
+      saveArr(KEYS.transactions, state.transactions);
+      render();
+      toast('読み込みました');
+    }catch(e){ toast('JSONの読み込みに失敗しました'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- events ---------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{ activeTab = t.dataset.tab; document.getElementById('searchInput').value=''; searchText=''; render(); };
+});
+document.getElementById('searchInput').oninput = (e)=>{ searchText = e.target.value; render(); };
+document.getElementById('sortSelect').onchange = (e)=>{ sortKey[activeTab] = e.target.value; render(); };
+document.getElementById('colBtn').onclick = openColumnEditor;
+document.getElementById('fetchBtn').onclick = fetchPrices;
+document.getElementById('addFab').onclick = ()=>openForm(activeTab, null);
+document.getElementById('exportBtn').onclick = exportJSON;
+document.getElementById('importBtn').onclick = ()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = (e)=>{ if(e.target.files[0]) importJSON(e.target.files[0]); };
+
+/* ---------- init ---------- */
+render();
+if(state.watchlist.length || state.holdings.length){ fetchPrices(); }
+</script>
+</body>
+</html>
