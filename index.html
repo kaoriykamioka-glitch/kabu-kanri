@@ -114,6 +114,7 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
   </div>
   <div class="chips" id="tagChips"></div>
   <div class="summary" id="summaryBox"></div>
+  <div class="hint">ⓘ 無料の外部プロキシ経由の非公式取得のため、取得できないことがあります(その場合は手動入力欄で上書きしてください)</div>
   <div class="hint" id="fetchHint"></div>
   <div id="listArea"></div>
   <div class="footer-actions">
@@ -134,7 +135,7 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-10-2';
+const BUILD_ID = 'kabu-kanri-2026-08-10-3';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -315,6 +316,25 @@ function transactionMetrics(item){
 }
 
 /* ---------- price fetch ---------- */
+async function fetchOneQuote(ysym){
+  const target = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ysym);
+  const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 10000);
+  try{
+    const res = await fetch(proxied, {signal:ctrl.signal});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
+    if(!meta || meta.regularMarketPrice==null) throw new Error('no price');
+    const price = meta.regularMarketPrice;
+    const prevClose = meta.chartPreviousClose;
+    const changePct = prevClose ? (price-prevClose)/prevClose*100 : null;
+    return {price, changePct};
+  }finally{
+    clearTimeout(timer);
+  }
+}
 async function fetchPrices(){
   const symMap = {};
   [...state.watchlist, ...state.holdings].forEach(it=>{
@@ -327,29 +347,28 @@ async function fetchPrices(){
   symbols.push('JPY=X');
   const hint = document.getElementById('fetchHint');
   hint.textContent = '価格を取得中...';
-  const target = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(symbols.join(','));
-  const proxied = 'https://api.allorigins.win/raw?url='+encodeURIComponent(target);
-  try{
-    const res = await fetch(proxied);
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    const results = data && data.quoteResponse && data.quoteResponse.result || [];
-    if(results.length===0) throw new Error('empty result');
-    const now = Date.now();
-    results.forEach(r=>{
-      const price = r.regularMarketPrice;
-      const changePct = r.regularMarketChangePercent;
-      if(r.symbol==='JPY=X'){
-        state.priceCache['FX:JPY=X'] = {price, changePct, fetchedAt:now};
+  const now = Date.now();
+  const results = await Promise.allSettled(symbols.map(sym=>fetchOneQuote(sym)));
+  let okCount=0, failCount=0;
+  results.forEach((r,i)=>{
+    const sym = symbols[i];
+    if(r.status==='fulfilled'){
+      okCount++;
+      if(sym==='JPY=X'){
+        state.priceCache['FX:JPY=X'] = {price:r.value.price, changePct:r.value.changePct, fetchedAt:now};
       }else{
-        const info = symMap[r.symbol];
-        if(info) state.priceCache[priceKey(info.market,info.ticker)] = {price, changePct, fetchedAt:now};
+        const info = symMap[sym];
+        if(info) state.priceCache[priceKey(info.market,info.ticker)] = {price:r.value.price, changePct:r.value.changePct, fetchedAt:now};
       }
-    });
-    saveObj(KEYS.pricecache, state.priceCache);
-    hint.textContent = '最終取得: '+new Date(now).toLocaleString('ja-JP');
-    toast('価格を更新しました');
-  }catch(e){
+    }else{
+      failCount++;
+    }
+  });
+  saveObj(KEYS.pricecache, state.priceCache);
+  if(okCount>0){
+    hint.textContent = '最終取得: '+new Date(now).toLocaleString('ja-JP')+(failCount?`(${failCount}件取得失敗)`:'');
+    toast(failCount ? `一部取得失敗(${okCount}/${symbols.length}件成功)` : '価格を更新しました');
+  }else{
     hint.textContent = '取得失敗(前回値を使用中) — 手動入力欄で上書きできます';
     toast('価格取得に失敗しました');
   }
