@@ -6,16 +6,16 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>株管理</title>
+<title>マイウォッチ</title>
 <style>
 :root{
-  --ink:#2b2925; --ink-soft:#6b6558; --paper:#f7f4ee; --card:#ffffff;
-  --line:#e4ddd0; --accent:#8a6d3b; --radius:14px;
-  --gain:#1a7f4b; --loss:#c0392b;
+  --ink:#1f2328; --ink-soft:#6b7280; --paper:#f7f7f8; --card:#ffffff;
+  --line:#e5e7eb; --accent:#374151; --radius:14px;
+  --gain:#16a34a; --loss:#dc2626;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-size:17px;
-  font-family:"Hiragino Mincho ProN","Yu Mincho","BIZ UDMincho",serif;}
+  font-family:"Yu Gothic","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;}
 header{position:sticky;top:0;z-index:10;background:var(--paper);
   border-bottom:1px solid var(--line);padding:20px 24px 0;}
 h1{font-size:28px;margin:0 0 14px;}
@@ -94,7 +94,7 @@ td.loss{color:var(--loss);font-weight:bold;}
 </head>
 <body>
 <header>
-  <h1>株管理</h1>
+  <h1>マイウォッチ</h1>
   <div class="tabs">
     <div class="tab on" data-tab="watchlist">ウォッチリスト</div>
     <div class="tab" data-tab="holdings" style="display:none">保有</div>
@@ -143,7 +143,7 @@ td.loss{color:var(--loss);font-weight:bold;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-10-6';
+const BUILD_ID = 'kabu-kanri-2026-08-11-7';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
