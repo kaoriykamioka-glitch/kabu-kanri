@@ -14,86 +14,82 @@
   --gain:#1a7f4b; --loss:#c0392b;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);
-  font-family:"Hiragino Mincho ProN","Yu Mincho","BIZ UDMincho",serif;
-  padding-bottom:calc(88px + env(safe-area-inset-bottom));}
+body{margin:0;background:var(--paper);color:var(--ink);font-size:17px;
+  font-family:"Hiragino Mincho ProN","Yu Mincho","BIZ UDMincho",serif;}
 header{position:sticky;top:0;z-index:10;background:var(--paper);
-  border-bottom:1px solid var(--line);padding:14px 16px 0;}
-h1{font-size:19px;margin:0 0 10px;}
+  border-bottom:1px solid var(--line);padding:20px 24px 0;}
+h1{font-size:28px;margin:0 0 14px;}
 .tabs{display:flex;gap:6px;}
-.tab{flex:1;text-align:center;padding:10px 4px;border-radius:10px 10px 0 0;
-  color:var(--ink-soft);font-size:14px;cursor:pointer;border:1px solid transparent;border-bottom:none;}
+.tab{flex:none;padding:12px 24px;border-radius:10px 10px 0 0;
+  color:var(--ink-soft);font-size:16px;cursor:pointer;border:1px solid transparent;border-bottom:none;}
 .tab.on{background:var(--card);color:var(--ink);font-weight:bold;border-color:var(--line);}
-main{max-width:640px;margin:0 auto;padding:14px 12px;}
-.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
-.toolbar input[type=search]{flex:1;min-width:120px;padding:9px 10px;border:1px solid var(--line);
-  border-radius:10px;font-size:16px;background:var(--card);color:var(--ink);}
-.toolbar select{padding:9px 8px;border:1px solid var(--line);border-radius:10px;
-  background:var(--card);color:var(--ink);font-size:14px;}
-.btn{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);
-  color:var(--ink);font-size:13px;cursor:pointer;white-space:nowrap;}
+main{max-width:1120px;margin:0 auto;padding:22px 24px 60px;}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.toolbar input[type=search]{flex:1;min-width:200px;padding:11px 14px;border:1px solid var(--line);
+  border-radius:10px;font-size:17px;background:var(--card);color:var(--ink);}
+.toolbar select{padding:11px 10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--ink);font-size:16px;}
+.btn{padding:11px 18px;border-radius:10px;border:1px solid var(--line);background:var(--card);
+  color:var(--ink);font-size:16px;cursor:pointer;white-space:nowrap;}
 .btn:active{opacity:.7}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;margin-bottom:6px;}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;margin-bottom:8px;}
 .chips::-webkit-scrollbar{display:none;}
-.chip{flex:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);
-  background:var(--card);color:var(--ink-soft);font-size:12px;cursor:pointer;}
+.chip{flex:none;padding:8px 16px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink-soft);font-size:15px;cursor:pointer;}
 .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;}
-.summary{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;}
+.summary{display:flex;gap:12px;overflow-x:auto;margin-bottom:16px;}
 .sum-box{flex:none;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:10px 14px;min-width:110px;}
-.sum-box .lbl{font-size:11px;color:var(--ink-soft);}
-.sum-box .val{font-size:16px;font-weight:bold;margin-top:2px;}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;}
-.card .spine{position:absolute;left:0;top:0;bottom:0;width:5px;}
-.card .spine.gain{background:var(--gain);}
-.card .spine.loss{background:var(--loss);}
-.card .spine.flat{background:var(--line);}
-.card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:8px;}
-.card-title{font-size:15px;font-weight:bold;}
-.card-sub{font-size:12px;color:var(--ink-soft);}
-.card-actions{display:flex;gap:6px;}
-.icon-btn{background:none;border:none;font-size:15px;cursor:pointer;color:var(--ink-soft);padding:2px 4px;}
-.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:13px;}
-.kv{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:3px 0;}
-.kv .k{color:var(--ink-soft);}
-.kv .v{font-weight:bold;}
-.kv .v.gain{color:var(--gain);}
-.kv .v.loss{color:var(--loss);}
-.tagrow{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;}
-.tag-pill{font-size:11px;background:var(--paper);border:1px solid var(--line);border-radius:999px;
-  padding:2px 8px;color:var(--ink-soft);}
-.empty{text-align:center;color:var(--ink-soft);padding:40px 10px;font-size:13px;}
-.fab{position:fixed;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));
-  width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;
-  border:none;font-size:26px;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:pointer;z-index:5;}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:20;}
-.overlay.show{display:block;}
-.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);
-  border-radius:18px 18px 0 0;max-height:88vh;overflow-y:auto;padding:16px 16px calc(20px + env(safe-area-inset-bottom));
-  transform:translateY(100%);transition:transform .25s;z-index:21;}
-.overlay.show .sheet{transform:translateY(0);}
-.sheet h2{margin:0 0 12px;font-size:16px;}
-.field{margin-bottom:10px;}
-.field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
-.field input,.field select,.field textarea{width:100%;padding:9px 10px;border:1px solid var(--line);
+  padding:14px 20px;min-width:140px;}
+.sum-box .lbl{font-size:13px;color:var(--ink-soft);}
+.sum-box .val{font-size:20px;font-weight:bold;margin-top:4px;}
+.empty{text-align:center;color:var(--ink-soft);padding:60px 10px;font-size:16px;}
+.table-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
+table.watch-table{width:100%;border-collapse:collapse;font-size:17px;}
+table.watch-table th{text-align:left;padding:14px 16px;border-bottom:2px solid var(--line);
+  color:var(--ink-soft);font-weight:bold;white-space:nowrap;background:var(--paper);font-size:14px;}
+table.watch-table td{padding:13px 16px;border-bottom:1px solid var(--line);white-space:nowrap;}
+table.watch-table tbody tr:last-child td{border-bottom:none;}
+table.watch-table tbody tr:hover{background:rgba(0,0,0,.025);}
+table.watch-table tr.row-gain td:first-child{box-shadow:inset 4px 0 0 var(--gain);}
+table.watch-table tr.row-loss td:first-child{box-shadow:inset 4px 0 0 var(--loss);}
+td.gain{color:var(--gain);font-weight:bold;}
+td.loss{color:var(--loss);font-weight:bold;}
+.actions-col{white-space:nowrap;}
+.icon-btn{background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);padding:2px 6px;}
+.tag-pill{display:inline-block;font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:999px;
+  padding:2px 10px;color:var(--ink-soft);margin:1px 3px 1px 0;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:20;
+  align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .18s;}
+.overlay.show{display:flex;opacity:1;}
+.sheet{position:relative;background:var(--card);border-radius:16px;max-width:560px;width:100%;
+  max-height:86vh;overflow-y:auto;padding:24px 26px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.sheet h2{margin:0 0 16px;font-size:20px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);
   border-radius:10px;font-size:16px;background:var(--paper);color:var(--ink);font-family:inherit;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.sheet-actions{display:flex;gap:8px;margin-top:16px;}
+.sheet-actions{display:flex;gap:10px;margin-top:18px;}
 .sheet-actions .btn{flex:1;text-align:center;}
-.col-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);}
-.col-item label{flex:1;font-size:14px;}
+.col-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+.col-item label{flex:1;font-size:15px;}
 .col-item .updown{display:flex;gap:4px;}
 .col-item button{background:var(--paper);border:1px solid var(--line);border-radius:6px;
-  width:26px;height:26px;cursor:pointer;color:var(--ink);}
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);
-  background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;
+  width:28px;height:28px;cursor:pointer;color:var(--ink);}
+.toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:15px;
   opacity:0;transition:opacity .3s;z-index:30;pointer-events:none;}
 .toast.show{opacity:.92;}
-.hint{font-size:11px;color:var(--ink-soft);margin:2px 0 10px;}
-.footer-actions{display:flex;gap:8px;justify-content:center;margin:20px 0 6px;}
-.footer-actions .btn{font-size:12px;}
+.hint{font-size:13px;color:var(--ink-soft);margin:2px 0 12px;}
+.footer-actions{display:flex;gap:10px;justify-content:center;margin:24px 0 6px;}
+.footer-actions .btn{font-size:14px;}
+.chart-toggle{display:flex;gap:8px;margin-bottom:14px;}
+.chart-toggle button{padding:8px 16px;border-radius:8px;border:1px solid var(--line);
+  background:var(--paper);color:var(--ink);font-size:15px;cursor:pointer;}
+.chart-toggle button.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chart-svg-wrap{width:100%;overflow-x:auto;}
+.chart-range-label{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft);margin-top:6px;}
 </style>
 </head>
 <body>
@@ -101,8 +97,8 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
   <h1>株管理</h1>
   <div class="tabs">
     <div class="tab on" data-tab="watchlist">ウォッチリスト</div>
-    <div class="tab" data-tab="holdings">保有</div>
-    <div class="tab" data-tab="transactions">取引</div>
+    <div class="tab" data-tab="holdings" style="display:none">保有</div>
+    <div class="tab" data-tab="transactions" style="display:none">取引</div>
   </div>
 </header>
 <main>
@@ -111,6 +107,7 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
     <select id="sortSelect"></select>
     <button class="btn" id="colBtn">列を編集</button>
     <button class="btn" id="fetchBtn">価格を更新</button>
+    <button class="btn primary" id="addBtn">＋追加</button>
   </div>
   <div class="chips" id="tagChips"></div>
   <div class="summary" id="summaryBox"></div>
@@ -123,7 +120,6 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
     <input type="file" id="importFile" accept="application/json" style="display:none">
   </div>
 </main>
-<button class="fab" id="addFab">＋</button>
 
 <div class="overlay" id="formOverlay" onclick="if(event.target===this)closeSheet('formOverlay')">
   <div class="sheet" id="formSheet"></div>
@@ -131,11 +127,23 @@ main{max-width:640px;margin:0 auto;padding:14px 12px;}
 <div class="overlay" id="colOverlay" onclick="if(event.target===this)closeSheet('colOverlay')">
   <div class="sheet" id="colSheet"></div>
 </div>
+<div class="overlay" id="chartOverlay" onclick="if(event.target===this)closeSheet('chartOverlay')">
+  <div class="sheet">
+    <h2 id="chartTitle"></h2>
+    <div class="chart-toggle">
+      <button data-kind="daily" onclick="loadChartRange('daily')">日足</button>
+      <button data-kind="weekly" onclick="loadChartRange('weekly')">週足</button>
+      <button data-kind="monthly" onclick="loadChartRange('monthly')">月足</button>
+    </div>
+    <div id="chartArea"></div>
+    <div class="sheet-actions"><button class="btn" onclick="closeSheet('chartOverlay')">閉じる</button></div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-10-5';
+const BUILD_ID = 'kabu-kanri-2026-08-10-6';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -270,6 +278,15 @@ function toast(msg){
 function openSheet(id){ document.getElementById(id).classList.add('show'); }
 function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
 function priceKey(market,ticker){ return market+':'+ticker.toUpperCase(); }
+function parseYahooUrl(text){
+  if(!text) return null;
+  const m = text.match(/finance\.yahoo\.(?:co\.jp|com)\/quote\/([A-Za-z0-9]+)(?:\.([A-Za-z]+))?/i);
+  if(!m) return null;
+  const symbol = m[1].toUpperCase();
+  const suffix = m[2] ? m[2].toUpperCase() : '';
+  const market = suffix==='T' ? 'JP' : 'US';
+  return {ticker:symbol, market};
+}
 
 /* ---------- calculations ---------- */
 function getPrice(item){
@@ -373,6 +390,74 @@ async function fetchPrices(){
     toast('価格取得に失敗しました');
   }
   render();
+}
+
+/* ---------- history chart ---------- */
+const CHART_RANGES = {
+  daily:{range:'1mo', interval:'1d'},
+  weekly:{range:'1y', interval:'1wk'},
+  monthly:{range:'5y', interval:'1mo'},
+};
+let chartCurrentItem = null;
+async function fetchHistory(market, ticker, range, interval){
+  const ysym = market==='JP' ? (ticker+'.T') : ticker;
+  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ysym)}?range=${range}&interval=${interval}`;
+  const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 10000);
+  try{
+    const res = await fetch(proxied, {signal:ctrl.signal});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const result = data && data.chart && data.chart.result && data.chart.result[0];
+    if(!result) throw new Error('no data');
+    const timestamps = result.timestamp || [];
+    const closes = (result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close) || [];
+    return timestamps.map((t,i)=>({t, close:closes[i]})).filter(p=>p.close!=null);
+  }finally{
+    clearTimeout(timer);
+  }
+}
+function openChart(item){
+  chartCurrentItem = item;
+  document.getElementById('chartTitle').textContent = (item.name||item.ticker) + (item.ticker?' ('+item.ticker+')':'');
+  openSheet('chartOverlay');
+  loadChartRange('daily');
+}
+async function loadChartRange(kind){
+  document.querySelectorAll('.chart-toggle button').forEach(b=>b.classList.toggle('on', b.dataset.kind===kind));
+  const area = document.getElementById('chartArea');
+  area.innerHTML = '<div class="empty">読み込み中...</div>';
+  const cfg = CHART_RANGES[kind];
+  try{
+    const points = await fetchHistory(chartCurrentItem.market, chartCurrentItem.ticker, cfg.range, cfg.interval);
+    if(points.length<2) throw new Error('insufficient data');
+    area.innerHTML = renderChartSVG(points);
+  }catch(e){
+    area.innerHTML = '<div class="empty">チャートを取得できませんでした</div>';
+  }
+}
+function renderChartSVG(points){
+  const w=700, h=260, pad=20;
+  const closes = points.map(p=>p.close);
+  const min = Math.min(...closes), max = Math.max(...closes);
+  const range = (max-min)||1;
+  const stepX = points.length>1 ? (w-pad*2)/(points.length-1) : 0;
+  const coords = points.map((p,i)=>{
+    const x = pad + i*stepX;
+    const y = pad + (h-pad*2) * (1 - (p.close-min)/range);
+    return x.toFixed(1)+','+y.toFixed(1);
+  });
+  const trendColor = closes[closes.length-1] >= closes[0] ? 'var(--gain)' : 'var(--loss)';
+  const firstDate = new Date(points[0].t*1000).toLocaleDateString('ja-JP');
+  const lastDate = new Date(points[points.length-1].t*1000).toLocaleDateString('ja-JP');
+  return `<div class="chart-svg-wrap"><svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">
+    <polyline points="${coords.join(' ')}" fill="none" stroke="${trendColor}" stroke-width="2.5"/>
+  </svg></div>
+  <div class="chart-range-label">
+    <span>${firstDate} 〜 安値 ${fmtNum(min,2)}</span>
+    <span>${lastDate} 〜 高値 ${fmtNum(max,2)}</span>
+  </div>`;
 }
 
 /* ---------- rendering ---------- */
@@ -516,50 +601,65 @@ function renderList(){
   area.innerHTML='';
   const items = applySearchSortFilter(activeTab);
   if(items.length===0){
-    area.innerHTML = '<div class="empty">まだ登録がありません。右下の＋から追加してください。</div>';
+    area.innerHTML = '<div class="empty">まだ登録がありません。右上の「＋追加」から追加してください。</div>';
     return;
   }
   const visibleCols = columns[activeTab].filter(c=>c.visible).map(c=>c.key);
   const defMap = {}; COLUMN_DEFS[activeTab].forEach(c=>defMap[c.key]=c.label);
   const metricsFn = activeTab==='watchlist'?watchlistMetrics:activeTab==='holdings'?holdingMetrics:transactionMetrics;
+
+  const wrap = document.createElement('div'); wrap.className='table-wrap';
+  const table = document.createElement('table'); table.className='watch-table';
+  const thead = document.createElement('thead');
+  let headHtml = '<tr>';
+  visibleCols.forEach(k=>{ headHtml += `<th>${defMap[k]}</th>`; });
+  headHtml += '<th class="actions-col">操作</th></tr>';
+  thead.innerHTML = headHtml;
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
   items.forEach(item=>{
     const metrics = metricsFn(item);
-    const card = document.createElement('div'); card.className='card';
-    let spineClass='flat';
-    if(activeTab==='holdings' && metrics.pl!=null) spineClass = metrics.pl>0?'gain':metrics.pl<0?'loss':'flat';
-    if(activeTab==='watchlist' && metrics.changePct!=null) spineClass = metrics.changePct>0?'gain':metrics.changePct<0?'loss':'flat';
-    if(activeTab==='transactions' && metrics.realizedPL!=null) spineClass = metrics.realizedPL>0?'gain':metrics.realizedPL<0?'loss':'flat';
-    card.innerHTML = `<div class="spine ${spineClass}"></div>`;
-    const head = document.createElement('div'); head.className='card-head';
-    const title = (item.name||item.ticker||'') + (item.ticker?' ('+item.ticker+')':'');
-    head.innerHTML = `<div><div class="card-title"></div><div class="card-sub">${item.market||''}</div></div>
-      <div class="card-actions"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn" data-act="del">🗑</button></div>`;
-    head.querySelector('.card-title').textContent = title;
-    head.querySelector('[data-act="edit"]').onclick = ()=>openForm(activeTab, item);
-    head.querySelector('[data-act="del"]').onclick = ()=>{
+    let trendVal = null;
+    if(activeTab==='holdings') trendVal = metrics.pl;
+    if(activeTab==='watchlist') trendVal = metrics.changePct;
+    if(activeTab==='transactions') trendVal = metrics.realizedPL;
+    const tr = document.createElement('tr');
+    if(trendVal>0) tr.className='row-gain'; else if(trendVal<0) tr.className='row-loss';
+    visibleCols.forEach(k=>{
+      const td = document.createElement('td');
+      if(k==='tags'){
+        (item.tags||[]).forEach(t=>{ const p=document.createElement('span'); p.className='tag-pill'; p.textContent=t; td.appendChild(p); });
+      }else{
+        td.className = gainClass(activeTab,item,metrics,k);
+        td.textContent = fieldDisplay(activeTab,k,item,metrics);
+      }
+      tr.appendChild(td);
+    });
+    const actionsTd = document.createElement('td'); actionsTd.className='actions-col';
+    if(item.ticker){
+      const chartBtn = document.createElement('button'); chartBtn.className='icon-btn'; chartBtn.title='チャート'; chartBtn.textContent='📈';
+      chartBtn.onclick = ()=>openChart(item);
+      actionsTd.appendChild(chartBtn);
+    }
+    const editBtn = document.createElement('button'); editBtn.className='icon-btn'; editBtn.title='編集'; editBtn.textContent='✎';
+    editBtn.onclick = ()=>openForm(activeTab, item);
+    const delBtn = document.createElement('button'); delBtn.className='icon-btn'; delBtn.title='削除'; delBtn.textContent='🗑';
+    delBtn.onclick = ()=>{
       if(confirm('削除しますか?')){
         state[activeTab] = state[activeTab].filter(x=>x.id!==item.id);
         saveArr(KEYS[activeTab], state[activeTab]);
         render();
       }
     };
-    card.appendChild(head);
-    const grid = document.createElement('div'); grid.className='kv-grid';
-    visibleCols.filter(k=>k!=='tags').forEach(k=>{
-      const kv = document.createElement('div'); kv.className='kv';
-      const gcls = gainClass(activeTab,item,metrics,k);
-      kv.innerHTML = `<span class="k">${defMap[k]}</span><span class="v ${gcls}"></span>`;
-      kv.querySelector('.v').textContent = fieldDisplay(activeTab,k,item,metrics);
-      grid.appendChild(kv);
-    });
-    card.appendChild(grid);
-    if(visibleCols.includes('tags') && (item.tags||[]).length){
-      const tr = document.createElement('div'); tr.className='tagrow';
-      item.tags.forEach(t=>{ const p=document.createElement('span'); p.className='tag-pill'; p.textContent=t; tr.appendChild(p); });
-      card.appendChild(tr);
-    }
-    area.appendChild(card);
+    actionsTd.appendChild(editBtn);
+    actionsTd.appendChild(delBtn);
+    tr.appendChild(actionsTd);
+    tbody.appendChild(tr);
   });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  area.appendChild(wrap);
 }
 
 function renderSortSelect(){
@@ -634,6 +734,20 @@ function openForm(list, item){
   });
   html += `<div class="sheet-actions"><button class="btn" id="cancelFormBtn">キャンセル</button><button class="btn primary" id="saveFormBtn">保存</button></div>`;
   sheet.innerHTML = html;
+  const tickerInput = sheet.querySelector('[data-key="ticker"]');
+  const marketSelect = sheet.querySelector('[data-key="market"]');
+  if(tickerInput){
+    tickerInput.addEventListener('paste', (e)=>{
+      const text = (e.clipboardData || window.clipboardData).getData('text');
+      const parsed = parseYahooUrl(text);
+      if(parsed){
+        e.preventDefault();
+        tickerInput.value = parsed.ticker;
+        if(marketSelect) marketSelect.value = parsed.market;
+        toast('URLから銘柄コードを読み取りました: '+parsed.ticker);
+      }
+    });
+  }
   sheet.querySelector('#cancelFormBtn').onclick = ()=>closeSheet('formOverlay');
   sheet.querySelector('#saveFormBtn').onclick = ()=>{
     const data = item ? {...item} : {id:uid(), addedAt:new Date().toISOString().slice(0,10)};
@@ -736,7 +850,7 @@ document.getElementById('searchInput').oninput = (e)=>{ searchText = e.target.va
 document.getElementById('sortSelect').onchange = (e)=>{ sortKey[activeTab] = e.target.value; render(); };
 document.getElementById('colBtn').onclick = openColumnEditor;
 document.getElementById('fetchBtn').onclick = fetchPrices;
-document.getElementById('addFab').onclick = ()=>openForm(activeTab, null);
+document.getElementById('addBtn').onclick = ()=>openForm(activeTab, null);
 document.getElementById('exportBtn').onclick = exportJSON;
 document.getElementById('importBtn').onclick = ()=>document.getElementById('importFile').click();
 document.getElementById('importFile').onchange = (e)=>{ if(e.target.files[0]) importJSON(e.target.files[0]); };
