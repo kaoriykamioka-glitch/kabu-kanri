@@ -143,7 +143,7 @@ td.loss{color:var(--loss);font-weight:bold;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-11-8';
+const BUILD_ID = 'kabu-kanri-2026-08-11-9';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -286,6 +286,26 @@ function parseYahooUrl(text){
   const suffix = m[2] ? m[2].toUpperCase() : '';
   const market = suffix==='T' ? 'JP' : 'US';
   return {ticker:symbol, market};
+}
+async function fetchCompanyName(market, ticker){
+  const ysym = market==='JP' ? (ticker+'.T') : ticker;
+  const target = 'https://finance.yahoo.co.jp/quote/'+encodeURIComponent(ysym);
+  const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 8000);
+  try{
+    const res = await fetch(proxied, {signal:ctrl.signal});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const html = await res.text();
+    const m = html.match(/<title>([^<]+)<\/title>/);
+    if(!m) throw new Error('no title');
+    let name = m[1].split('【')[0].trim();
+    name = name.replace(/[\(（]株[\)）]$/,'').trim();
+    if(!name) throw new Error('empty name');
+    return name;
+  }finally{
+    clearTimeout(timer);
+  }
 }
 
 /* ---------- calculations ---------- */
@@ -736,6 +756,16 @@ function openForm(list, item){
   sheet.innerHTML = html;
   const tickerInput = sheet.querySelector('[data-key="ticker"]');
   const marketSelect = sheet.querySelector('[data-key="market"]');
+  const nameInput = sheet.querySelector('[data-key="name"]');
+  async function autoFillName(){
+    if(!tickerInput || !nameInput || !marketSelect) return;
+    const ticker = tickerInput.value.trim();
+    if(!ticker || nameInput.value.trim()) return;
+    try{
+      const name = await fetchCompanyName(marketSelect.value, ticker);
+      if(!nameInput.value.trim()) nameInput.value = name;
+    }catch(e){}
+  }
   if(tickerInput){
     tickerInput.addEventListener('paste', (e)=>{
       const text = (e.clipboardData || window.clipboardData).getData('text');
@@ -745,8 +775,10 @@ function openForm(list, item){
         tickerInput.value = parsed.ticker;
         if(marketSelect) marketSelect.value = parsed.market;
         toast('URLから銘柄コードを読み取りました: '+parsed.ticker);
+        autoFillName();
       }
     });
+    tickerInput.addEventListener('blur', autoFillName);
   }
   sheet.querySelector('#cancelFormBtn').onclick = ()=>closeSheet('formOverlay');
   sheet.querySelector('#saveFormBtn').onclick = ()=>{
