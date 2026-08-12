@@ -160,7 +160,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-12-18';
+const BUILD_ID = 'kabu-kanri-2026-08-12-19';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -953,7 +953,7 @@ function openForm(list, item){
       if(f.type==='number'){ data[f.key] = v===''?undefined:Number(v); return; }
       data[f.key] = v;
     });
-    if(!data.name && !data.ticker){ toast('銘柄名かコードを入力してください'); return; }
+    if(!data.ticker){ toast('銘柄コードを入力してください(チャート・価格取得に必要です)'); return; }
     const arr = state[list];
     const idx = arr.findIndex(x=>x.id===data.id);
     if(idx>=0) arr[idx]=data; else arr.push(data);
