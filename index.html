@@ -96,6 +96,9 @@ td.loss{color:var(--loss);font-weight:bold;}
 .news-item:hover .news-title{color:var(--accent);}
 .news-title{font-size:14px;line-height:1.5;}
 .news-pub{font-size:12px;color:var(--ink-soft);margin-top:3px;}
+td.news-cell{max-width:280px;overflow:hidden;text-overflow:ellipsis;}
+td.news-cell a{color:var(--ink);text-decoration:none;}
+td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -151,7 +154,7 @@ td.loss{color:var(--loss);font-weight:bold;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-11-10';
+const BUILD_ID = 'kabu-kanri-2026-08-12-11';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -171,6 +174,7 @@ const KEYS = {
   holdings:'kabu-holdings-v1',
   transactions:'kabu-transactions-v1',
   pricecache:'kabu-pricecache-v1',
+  newscache:'kabu-newscache-v1',
 };
 let storageOK = true;
 function loadArr(key){
@@ -214,6 +218,7 @@ const COLUMN_DEFS = {
     {key:'changePct', label:'前日比%', defaultVisible:true},
     {key:'targetPrice', label:'目標株価', defaultVisible:true},
     {key:'diffToTarget', label:'目標との差%', defaultVisible:false},
+    {key:'news', label:'最新ニュース', defaultVisible:true},
     {key:'tags', label:'タグ', defaultVisible:true},
     {key:'memo', label:'メモ', defaultVisible:false},
     {key:'addedAt', label:'追加日', defaultVisible:false},
@@ -256,6 +261,7 @@ let state = {
   holdings: loadArr(KEYS.holdings),
   transactions: loadArr(KEYS.transactions),
   priceCache: loadObj(KEYS.pricecache),
+  newsCache: loadObj(KEYS.newscache),
 };
 let columns = {
   watchlist: loadCols('watchlist'),
@@ -470,6 +476,19 @@ async function fetchNews(market, ticker){
     const data = await res.json();
     return (data.news||[]).slice(0,8).map(n=>({title:n.title, url:n.link, publisher:n.publisher||''}));
   }
+}
+async function fetchAllNews(){
+  const targets = state.watchlist.filter(it=>it.ticker);
+  if(targets.length===0) return;
+  const results = await Promise.allSettled(targets.map(it=>fetchNews(it.market, it.ticker)));
+  results.forEach((r,i)=>{
+    if(r.status==='fulfilled' && r.value.length>0){
+      const it = targets[i];
+      state.newsCache[priceKey(it.market,it.ticker)] = {headline:r.value[0].title, url:r.value[0].url, fetchedAt:Date.now()};
+    }
+  });
+  saveObj(KEYS.newscache, state.newsCache);
+  render();
 }
 async function loadNews(item){
   const area = document.getElementById('newsArea');
@@ -698,6 +717,18 @@ function renderList(){
       const td = document.createElement('td');
       if(k==='tags'){
         (item.tags||[]).forEach(t=>{ const p=document.createElement('span'); p.className='tag-pill'; p.textContent=t; td.appendChild(p); });
+      }else if(k==='news'){
+        td.className = 'news-cell';
+        const c = state.newsCache[priceKey(item.market,item.ticker)];
+        if(c){
+          const a = document.createElement('a');
+          a.href = c.url; a.target='_blank'; a.rel='noopener noreferrer';
+          a.textContent = c.headline;
+          a.title = c.headline;
+          td.appendChild(a);
+        }else{
+          td.textContent = '-';
+        }
       }else{
         td.className = gainClass(activeTab,item,metrics,k);
         td.textContent = fieldDisplay(activeTab,k,item,metrics);
@@ -847,6 +878,7 @@ function openForm(list, item){
     toast('保存しました');
     render();
     if((list==='watchlist' || list==='holdings') && data.ticker){ fetchPrices(); }
+    if(list==='watchlist' && data.ticker){ fetchAllNews(); }
   };
   openSheet('formOverlay');
 }
@@ -929,7 +961,7 @@ document.querySelectorAll('.tab').forEach(t=>{
 document.getElementById('searchInput').oninput = (e)=>{ searchText = e.target.value; render(); };
 document.getElementById('sortSelect').onchange = (e)=>{ sortKey[activeTab] = e.target.value; render(); };
 document.getElementById('colBtn').onclick = openColumnEditor;
-document.getElementById('fetchBtn').onclick = fetchPrices;
+document.getElementById('fetchBtn').onclick = ()=>{ fetchPrices(); fetchAllNews(); };
 document.getElementById('addBtn').onclick = ()=>openForm(activeTab, null);
 document.getElementById('exportBtn').onclick = exportJSON;
 document.getElementById('importBtn').onclick = ()=>document.getElementById('importFile').click();
@@ -937,7 +969,7 @@ document.getElementById('importFile').onchange = (e)=>{ if(e.target.files[0]) im
 
 /* ---------- init ---------- */
 render();
-if(state.watchlist.length || state.holdings.length){ fetchPrices(); }
+if(state.watchlist.length || state.holdings.length){ fetchPrices(); fetchAllNews(); }
 </script>
 </body>
 </html>
