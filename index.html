@@ -154,7 +154,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-12-11';
+const BUILD_ID = 'kabu-kanri-2026-08-12-12';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -197,11 +197,17 @@ function saveObj(key,val){
 }
 function loadCols(list){
   const key = 'kabu-columns-'+list+'-v1';
+  const defs = COLUMN_DEFS[list];
+  let saved = null;
   try{
     const s = localStorage.getItem(key);
-    if(s) return JSON.parse(s);
+    if(s) saved = JSON.parse(s);
   }catch(e){}
-  return COLUMN_DEFS[list].map(c=>({key:c.key, visible:c.defaultVisible}));
+  if(!saved) return defs.map(c=>({key:c.key, visible:c.defaultVisible}));
+  const savedKeys = new Set(saved.map(c=>c.key));
+  const merged = saved.filter(c=>defs.some(d=>d.key===c.key));
+  defs.forEach(d=>{ if(!savedKeys.has(d.key)) merged.push({key:d.key, visible:d.defaultVisible}); });
+  return merged;
 }
 function saveCols(list,val){
   if(!storageOK) return;
