@@ -156,7 +156,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-12-13';
+const BUILD_ID = 'kabu-kanri-2026-08-12-14';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -258,6 +258,7 @@ const COLUMN_DEFS = {
     {key:'amount', label:'約定代金', defaultVisible:true},
     {key:'costBasisAtSale', label:'売却時取得単価', defaultVisible:false},
     {key:'realizedPL', label:'実現損益', defaultVisible:true},
+    {key:'ep', label:'EP(税引後)', defaultVisible:true},
     {key:'tags', label:'タグ', defaultVisible:true},
     {key:'memo', label:'メモ', defaultVisible:false},
   ],
@@ -381,7 +382,8 @@ function transactionMetrics(item){
   if(item.side==='sell' && item.costBasisAtSale){
     realizedPL = (price - Number(item.costBasisAtSale))*qty - fee;
   }
-  return {amount, realizedPL};
+  const ep = realizedPL==null ? null : (realizedPL>0 ? realizedPL*0.8 : realizedPL);
+  return {amount, realizedPL, ep};
 }
 
 /* ---------- price fetch ---------- */
@@ -642,15 +644,17 @@ function fieldDisplay(list, key, item, metrics){
     case 'amount': return fmtNum(metrics.amount,0);
     case 'costBasisAtSale': return item.costBasisAtSale ? fmtNum(item.costBasisAtSale,2) : '-';
     case 'realizedPL': return metrics.realizedPL!=null ? fmtNum(metrics.realizedPL,0) : '-';
+    case 'ep': return metrics.ep!=null ? fmtNum(metrics.ep,0) : '-';
     default: return '';
   }
 }
-function isGainField(key){ return ['price','changePct','diffToTarget','pl','plPct','realizedPL'].includes(key); }
+function isGainField(key){ return ['price','changePct','diffToTarget','pl','plPct','realizedPL','ep'].includes(key); }
 function gainClass(list, item, metrics, key){
   if(!isGainField(key)) return '';
   let v;
   if(key==='pl'||key==='plPct') v = metrics.pl;
   else if(key==='realizedPL') v = metrics.realizedPL;
+  else if(key==='ep') v = metrics.ep;
   else if(key==='changePct') v = metrics.changePct;
   else if(key==='diffToTarget') v = metrics.diffToTarget;
   else return '';
