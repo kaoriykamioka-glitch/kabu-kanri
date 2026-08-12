@@ -156,7 +156,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-12-15';
+const BUILD_ID = 'kabu-kanri-2026-08-12-16';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -287,6 +287,9 @@ function uid(){ return 'u'+Date.now().toString(36)+Math.random().toString(36).sl
 function fmtNum(n, decimals){
   if(n===null||n===undefined||isNaN(n)) return '-';
   return Number(n).toLocaleString('ja-JP',{minimumFractionDigits:decimals||0, maximumFractionDigits:decimals||2});
+}
+function fmtPrice(n, market){
+  return fmtNum(n, market==='JP' ? 0 : 2);
 }
 function fmtPct(n){
   if(n===null||n===undefined||isNaN(n)) return '-';
@@ -567,8 +570,8 @@ function renderChartSVG(points){
     <polyline points="${coords.join(' ')}" fill="none" stroke="${trendColor}" stroke-width="2.5"/>
   </svg></div>
   <div class="chart-range-label">
-    <span>${firstDate} 〜 安値 ${fmtNum(min,2)}</span>
-    <span>${lastDate} 〜 高値 ${fmtNum(max,2)}</span>
+    <span>${firstDate} 〜 安値 ${fmtPrice(min, chartCurrentItem.market)}</span>
+    <span>${lastDate} 〜 高値 ${fmtPrice(max, chartCurrentItem.market)}</span>
   </div>`;
 }
 
@@ -630,10 +633,10 @@ function fieldDisplay(list, key, item, metrics){
     case 'ticker': return item.ticker;
     case 'name': return item.name;
     case 'qty': return fmtNum(item.qty,0);
-    case 'avgCost': return fmtNum(item.avgCost,2);
-    case 'price': return list==='transactions' ? fmtNum(item.price,2) : (metrics.price!=null ? fmtNum(metrics.price,2)+(item.manualPrice?'(手動)':'') : '未取得');
+    case 'avgCost': return fmtPrice(item.avgCost, item.market);
+    case 'price': return list==='transactions' ? fmtPrice(item.price, item.market) : (metrics.price!=null ? fmtPrice(metrics.price, item.market)+(item.manualPrice?'(手動)':'') : '未取得');
     case 'changePct': return metrics.changePct!=null ? fmtPct(metrics.changePct) : '-';
-    case 'targetPrice': return item.targetPrice ? fmtNum(item.targetPrice,2) : '-';
+    case 'targetPrice': return item.targetPrice ? fmtPrice(item.targetPrice, item.market) : '-';
     case 'diffToTarget': return metrics.diffToTarget!=null ? fmtPct(metrics.diffToTarget) : '-';
     case 'costAmount': return fmtNum(metrics.costAmount,0);
     case 'evalAmount': return metrics.evalAmount!=null ? fmtNum(metrics.evalAmount,0) : '-';
@@ -647,7 +650,7 @@ function fieldDisplay(list, key, item, metrics){
     case 'side': return item.side==='buy'?'買い':'売り';
     case 'fee': return fmtNum(item.fee,0);
     case 'amount': return fmtNum(metrics.amount,0);
-    case 'costBasisAtSale': return item.costBasisAtSale ? fmtNum(item.costBasisAtSale,2) : '-';
+    case 'costBasisAtSale': return item.costBasisAtSale ? fmtPrice(item.costBasisAtSale, item.market) : '-';
     case 'realizedPL': return metrics.realizedPL!=null ? fmtNum(metrics.realizedPL,0) : '-';
     case 'ep': return metrics.ep!=null ? fmtNum(metrics.ep,0) : '-';
     default: return '';
