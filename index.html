@@ -156,7 +156,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-12-14';
+const BUILD_ID = 'kabu-kanri-2026-08-12-15';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -256,7 +256,7 @@ const COLUMN_DEFS = {
     {key:'price', label:'単価', defaultVisible:true},
     {key:'fee', label:'手数料', defaultVisible:false},
     {key:'amount', label:'約定代金', defaultVisible:true},
-    {key:'costBasisAtSale', label:'売却時取得単価', defaultVisible:false},
+    {key:'costBasisAtSale', label:'相手方単価', defaultVisible:false},
     {key:'realizedPL', label:'実現損益', defaultVisible:true},
     {key:'ep', label:'EP(税引後)', defaultVisible:true},
     {key:'tags', label:'タグ', defaultVisible:true},
@@ -379,8 +379,13 @@ function transactionMetrics(item){
   const fee = Number(item.fee)||0;
   const amount = item.side==='buy' ? qty*price+fee : qty*price-fee;
   let realizedPL = null;
-  if(item.side==='sell' && item.costBasisAtSale){
-    realizedPL = (price - Number(item.costBasisAtSale))*qty - fee;
+  if(item.costBasisAtSale){
+    const ref = Number(item.costBasisAtSale);
+    if(item.side==='sell'){
+      realizedPL = (price - ref)*qty - fee;
+    }else if(item.side==='buy'){
+      realizedPL = (ref - price)*qty - fee;
+    }
   }
   const ep = realizedPL==null ? null : (realizedPL>0 ? realizedPL*0.8 : realizedPL);
   return {amount, realizedPL, ep};
@@ -839,7 +844,7 @@ function fieldsForList(list){
     {key:'qty', label:'数量', type:'number'},
     {key:'price', label:'単価', type:'number'},
     {key:'fee', label:'手数料', type:'number'},
-    {key:'costBasisAtSale', label:'売却時の取得単価(売りの実現損益計算用・任意)', type:'number'},
+    {key:'costBasisAtSale', label:'相手方単価(現物売りなら取得単価、信用買い戻しなら売建単価・任意)', type:'number'},
     {key:'tags', label:'タグ(カンマ区切り)', type:'text'},
     {key:'memo', label:'メモ', type:'textarea'},
   ];
