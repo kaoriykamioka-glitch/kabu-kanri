@@ -99,6 +99,8 @@ td.loss{color:var(--loss);font-weight:bold;}
 td.news-cell{max-width:280px;overflow:hidden;text-overflow:ellipsis;}
 td.news-cell a{color:var(--ink);text-decoration:none;}
 td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
+.name-link{color:var(--accent);text-decoration:underline;cursor:pointer;font-weight:bold;}
+.name-link:hover{opacity:.75;}
 </style>
 </head>
 <body>
@@ -107,7 +109,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
   <div class="tabs">
     <div class="tab on" data-tab="watchlist">ウォッチリスト</div>
     <div class="tab" data-tab="holdings" style="display:none">保有</div>
-    <div class="tab" data-tab="transactions" style="display:none">取引</div>
+    <div class="tab" data-tab="transactions">取引</div>
   </div>
 </header>
 <main>
@@ -154,7 +156,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-12-12';
+const BUILD_ID = 'kabu-kanri-2026-08-12-13';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -298,6 +300,16 @@ function toast(msg){
 function openSheet(id){ document.getElementById(id).classList.add('show'); }
 function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
 function priceKey(market,ticker){ return market+':'+ticker.toUpperCase(); }
+function hasTransactionHistory(item){
+  if(!item.ticker) return false;
+  return state.transactions.some(t=>t.market===item.market && (t.ticker||'').toUpperCase()===item.ticker.toUpperCase());
+}
+function jumpToTransactions(item){
+  activeTab = 'transactions';
+  searchText = item.ticker;
+  document.getElementById('searchInput').value = item.ticker;
+  render();
+}
 function parseYahooUrl(text){
   if(!text) return null;
   const m = text.match(/finance\.yahoo\.(?:co\.jp|com)\/quote\/([A-Za-z0-9]+)(?:\.([A-Za-z]+))?/i);
@@ -735,6 +747,14 @@ function renderList(){
         }else{
           td.textContent = '-';
         }
+      }else if(k==='name' && activeTab==='watchlist' && hasTransactionHistory(item)){
+        const a = document.createElement('a');
+        a.href = 'javascript:void(0)';
+        a.className = 'name-link';
+        a.textContent = fieldDisplay(activeTab,k,item,metrics);
+        a.title = '取引履歴を見る';
+        a.onclick = ()=>jumpToTransactions(item);
+        td.appendChild(a);
       }else{
         td.className = gainClass(activeTab,item,metrics,k);
         td.textContent = fieldDisplay(activeTab,k,item,metrics);
