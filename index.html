@@ -69,6 +69,9 @@ td.loss{color:var(--loss);font-weight:bold;}
 .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:5px;}
 .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);
   border-radius:10px;font-size:16px;background:var(--paper);color:var(--ink);font-family:inherit;}
+.field input[type=number]{-moz-appearance:textfield;appearance:textfield;}
+.field input[type=number]::-webkit-outer-spin-button,
+.field input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .sheet-actions{display:flex;gap:10px;margin-top:18px;}
 .sheet-actions .btn{flex:1;text-align:center;}
@@ -160,7 +163,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-12-19';
+const BUILD_ID = 'kabu-kanri-2026-08-14-20';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -231,6 +234,7 @@ const COLUMN_DEFS = {
     {key:'targetPrice', label:'目標株価', defaultVisible:true},
     {key:'diffToTarget', label:'目標との差%', defaultVisible:false},
     {key:'news', label:'最新ニュース', defaultVisible:true},
+    {key:'history', label:'時系列', defaultVisible:true},
     {key:'tags', label:'タグ', defaultVisible:true},
     {key:'memo', label:'メモ', defaultVisible:false},
     {key:'addedAt', label:'追加日', defaultVisible:false},
@@ -307,6 +311,11 @@ function toast(msg){
 function openSheet(id){ document.getElementById(id).classList.add('show'); }
 function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
 function priceKey(market,ticker){ return market+':'+ticker.toUpperCase(); }
+function historyUrl(item){
+  if(!item.ticker) return null;
+  const sym = item.market==='JP' ? (item.ticker+'.T') : item.ticker;
+  return 'https://finance.yahoo.co.jp/quote/'+encodeURIComponent(sym)+'/history';
+}
 async function runLimited(tasks, limit){
   const results = new Array(tasks.length);
   let idx = 0;
@@ -801,6 +810,16 @@ function renderList(){
           a.href = c.url; a.target='_blank'; a.rel='noopener noreferrer';
           a.textContent = c.headline;
           a.title = c.headline;
+          td.appendChild(a);
+        }else{
+          td.textContent = '-';
+        }
+      }else if(k==='history'){
+        const url = historyUrl(item);
+        if(url){
+          const a = document.createElement('a');
+          a.href = url; a.target='_blank'; a.rel='noopener noreferrer';
+          a.className = 'name-link'; a.textContent = '時系列';
           td.appendChild(a);
         }else{
           td.textContent = '-';
