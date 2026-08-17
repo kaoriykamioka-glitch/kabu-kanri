@@ -163,7 +163,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-14-20';
+const BUILD_ID = 'kabu-kanri-2026-08-17-21';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -260,6 +260,7 @@ const COLUMN_DEFS = {
     {key:'market', label:'市場', defaultVisible:true},
     {key:'ticker', label:'コード', defaultVisible:true},
     {key:'name', label:'銘柄名', defaultVisible:true},
+    {key:'price', label:'現在値', defaultVisible:true},
     {key:'qty', label:'数量', defaultVisible:true},
     {key:'buyPrice', label:'買値', defaultVisible:true},
     {key:'sellPrice', label:'売値', defaultVisible:true},
@@ -413,7 +414,8 @@ function transactionMetrics(item){
     realizedPL = (sellPrice - buyPrice)*qty - fee;
   }
   const ep = realizedPL==null ? null : (realizedPL>0 ? realizedPL*0.8 : realizedPL);
-  return {realizedPL, ep};
+  const price = getPrice(item);
+  return {realizedPL, ep, price};
 }
 
 /* ---------- price fetch ---------- */
@@ -438,7 +440,7 @@ async function fetchOneQuote(ysym){
 }
 async function fetchPrices(){
   const symMap = {};
-  [...state.watchlist, ...state.holdings].forEach(it=>{
+  [...state.watchlist, ...state.holdings, ...state.transactions].forEach(it=>{
     if(!it.ticker) return;
     const ysym = it.market==='JP' ? (it.ticker+'.T') : it.ticker;
     symMap[ysym] = {market:it.market, ticker:it.ticker};
@@ -980,7 +982,7 @@ function openForm(list, item){
     closeSheet('formOverlay');
     toast('保存しました');
     render();
-    if((list==='watchlist' || list==='holdings') && data.ticker){ fetchPrices(); }
+    if(data.ticker){ fetchPrices(); }
     if(list==='watchlist' && data.ticker){ fetchAllNews(); }
   };
   openSheet('formOverlay');
@@ -1072,7 +1074,7 @@ document.getElementById('importFile').onchange = (e)=>{ if(e.target.files[0]) im
 
 /* ---------- init ---------- */
 render();
-if(state.watchlist.length || state.holdings.length){ fetchPrices(); fetchAllNews(); }
+if(state.watchlist.length || state.holdings.length || state.transactions.length){ fetchPrices(); fetchAllNews(); }
 </script>
 </body>
 </html>
