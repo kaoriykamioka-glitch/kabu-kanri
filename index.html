@@ -163,7 +163,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-17-21';
+const BUILD_ID = 'kabu-kanri-2026-08-17-22';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -311,7 +311,7 @@ function toast(msg){
 }
 function openSheet(id){ document.getElementById(id).classList.add('show'); }
 function closeSheet(id){ document.getElementById(id).classList.remove('show'); }
-function priceKey(market,ticker){ return market+':'+ticker.toUpperCase(); }
+function priceKey(market,ticker){ return market+':'+(ticker||'').toUpperCase(); }
 function historyUrl(item){
   if(!item.ticker) return null;
   const sym = item.market==='JP' ? (item.ticker+'.T') : item.ticker;
@@ -374,6 +374,7 @@ async function fetchCompanyName(market, ticker){
 /* ---------- calculations ---------- */
 function getPrice(item){
   if(item.manualPrice!==undefined && item.manualPrice!==null && item.manualPrice!=='') return Number(item.manualPrice);
+  if(!item.ticker || !item.market) return null;
   const c = state.priceCache[priceKey(item.market,item.ticker)];
   return c ? c.price : null;
 }
@@ -793,6 +794,7 @@ function renderList(){
 
   const tbody = document.createElement('tbody');
   items.forEach(item=>{
+   try{
     const metrics = metricsFn(item);
     let trendVal = null;
     if(activeTab==='holdings') trendVal = metrics.pl;
@@ -860,6 +862,7 @@ function renderList(){
     actionsTd.appendChild(delBtn);
     tr.appendChild(actionsTd);
     tbody.appendChild(tr);
+   }catch(e){ console.error('行の描画に失敗しました', item, e); }
   });
   table.appendChild(tbody);
   wrap.appendChild(table);
