@@ -125,6 +125,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
     <select id="sortSelect"></select>
     <button class="btn" id="colBtn">列を編集</button>
     <button class="btn" id="fetchBtn">価格を更新</button>
+    <button class="btn" id="backupBtn">☁️ バックアップ</button>
     <button class="btn primary" id="addBtn">＋追加</button>
   </div>
   <div class="chips" id="tagChips"></div>
@@ -145,6 +146,9 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="overlay" id="colOverlay" onclick="if(event.target===this)closeSheet('colOverlay')">
   <div class="sheet" id="colSheet"></div>
 </div>
+<div class="overlay" id="backupOverlay" onclick="if(event.target===this)closeSheet('backupOverlay')">
+  <div class="sheet" id="backupSheet"></div>
+</div>
 <div class="overlay" id="chartOverlay" onclick="if(event.target===this)closeSheet('chartOverlay')">
   <div class="sheet">
     <h2 id="chartTitle"></h2>
@@ -163,7 +167,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-17-22';
+const BUILD_ID = 'kabu-kanri-2026-08-17-23';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -196,6 +200,7 @@ function loadArr(key){
 function saveArr(key,val){
   if(!storageOK) return;
   try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+  scheduleGistBackup();
 }
 function loadObj(key){
   try{ const s=localStorage.getItem(key); return s?JSON.parse(s):{}; }catch(e){ return {}; }
@@ -221,6 +226,117 @@ function loadCols(list){
 function saveCols(list,val){
   if(!storageOK) return;
   try{ localStorage.setItem('kabu-columns-'+list+'-v1', JSON.stringify(val)); }catch(e){}
+}
+
+/* ---------- GitHub Gist auto-backup ---------- */
+/* Chrome's "clear site data"/ストレージ整理 wipes localStorage entirely, so a real backup
+   must live outside the browser. Data is mirrored to a secret Gist on save; on load, if
+   local storage is empty, the user is offered a one-click restore from that Gist. */
+const GIST_ID = '7472a8d4a25a3fc6fc194fd9badb4d2a';
+const GIST_FILENAME = 'kabu-kanri-backup.json';
+const GITHUB_TOKEN_KEY = 'kabu-github-token-v1';
+function getGithubToken(){ try{ return localStorage.getItem(GITHUB_TOKEN_KEY) || ''; }catch(e){ return ''; } }
+function setGithubToken(t){ try{ if(t) localStorage.setItem(GITHUB_TOKEN_KEY, t); else localStorage.removeItem(GITHUB_TOKEN_KEY); }catch(e){} }
+function getLastBackupAt(){ try{ return localStorage.getItem('kabu-last-backup-at') || ''; }catch(e){ return ''; } }
+function setLastBackupAt(iso){ try{ localStorage.setItem('kabu-last-backup-at', iso); }catch(e){} }
+let gistBackupTimer = null;
+function scheduleGistBackup(){
+  if(!getGithubToken()) return;
+  clearTimeout(gistBackupTimer);
+  gistBackupTimer = setTimeout(backupToGistNow, 2000);
+}
+async function backupToGistNow(){
+  const token = getGithubToken();
+  if(!token) return;
+  const payload = {
+    watchlist: state.watchlist, holdings: state.holdings, transactions: state.transactions,
+    backedUpAt: new Date().toISOString(),
+  };
+  try{
+    const res = await fetch('https://api.github.com/gists/'+GIST_ID, {
+      method:'PATCH',
+      headers:{
+        'Authorization':'token '+token,
+        'Accept':'application/vnd.github+json',
+        'Content-Type':'application/json',
+      },
+      body: JSON.stringify({files:{[GIST_FILENAME]:{content: JSON.stringify(payload, null, 2)}}}),
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    setLastBackupAt(payload.backedUpAt);
+    updateBackupStatusUI();
+  }catch(e){
+    updateBackupStatusUI('バックアップに失敗しました(トークンをご確認ください)');
+  }
+}
+async function fetchGistBackup(){
+  const res = await fetch('https://api.github.com/gists/'+GIST_ID, {headers:{'Accept':'application/vnd.github+json'}});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  const file = data.files && data.files[GIST_FILENAME];
+  if(!file || !file.content) throw new Error('backup file not found');
+  return JSON.parse(file.content);
+}
+async function checkAutoRestore(){
+  if(state.watchlist.length || state.holdings.length || state.transactions.length) return;
+  try{
+    const backup = await fetchGistBackup();
+    const hasData = (backup.watchlist&&backup.watchlist.length) || (backup.holdings&&backup.holdings.length) || (backup.transactions&&backup.transactions.length);
+    if(!hasData) return;
+    const when = backup.backedUpAt ? new Date(backup.backedUpAt).toLocaleString('ja-JP') : '不明';
+    if(confirm('ローカルのデータが空です。GitHubの自動バックアップ('+when+')から復元しますか?')){
+      state.watchlist = backup.watchlist||[];
+      state.holdings = backup.holdings||[];
+      state.transactions = backup.transactions||[];
+      try{ localStorage.setItem(KEYS.watchlist, JSON.stringify(state.watchlist)); }catch(e){}
+      try{ localStorage.setItem(KEYS.holdings, JSON.stringify(state.holdings)); }catch(e){}
+      try{ localStorage.setItem(KEYS.transactions, JSON.stringify(state.transactions)); }catch(e){}
+      render();
+      toast('バックアップから復元しました');
+    }
+  }catch(e){}
+}
+function updateBackupStatusUI(errorMsg){
+  const el = document.getElementById('backupStatus');
+  if(!el) return;
+  if(errorMsg){ el.textContent = errorMsg; return; }
+  const token = getGithubToken();
+  if(!token){ el.textContent = '未設定 — トークンを入力すると保存のたびに自動バックアップされます'; return; }
+  const last = getLastBackupAt();
+  el.textContent = last ? ('最終バックアップ: '+new Date(last).toLocaleString('ja-JP')) : 'トークン設定済み(次回保存時にバックアップされます)';
+}
+function openBackupSettings(){
+  const sheet = document.getElementById('backupSheet');
+  const token = getGithubToken();
+  sheet.innerHTML = `
+    <h2>自動バックアップ設定</h2>
+    <p class="hint">保存するたびに、データをあなたのGitHub上の非公開Gistへ自動保存します。ブラウザのデータが消えても復元できます。</p>
+    <div class="field"><label>GitHubアクセストークン(gist権限のみでOK)</label>
+      <input type="password" id="githubTokenInput" value="${token}" placeholder="ghp_...">
+    </div>
+    <div class="hint" id="backupStatus"></div>
+    <div class="sheet-actions">
+      <button class="btn" id="backupCancelBtn">閉じる</button>
+      <button class="btn" id="backupNowBtn">今すぐバックアップ</button>
+      <button class="btn primary" id="backupSaveBtn">保存</button>
+    </div>`;
+  updateBackupStatusUI();
+  sheet.querySelector('#backupCancelBtn').onclick = ()=>closeSheet('backupOverlay');
+  sheet.querySelector('#backupSaveBtn').onclick = ()=>{
+    const t = sheet.querySelector('#githubTokenInput').value.trim();
+    setGithubToken(t);
+    toast(t?'トークンを保存しました':'トークンを削除しました');
+    updateBackupStatusUI();
+    if(t) backupToGistNow();
+  };
+  sheet.querySelector('#backupNowBtn').onclick = async ()=>{
+    const t = sheet.querySelector('#githubTokenInput').value.trim();
+    if(!t){ toast('先にトークンを入力してください'); return; }
+    setGithubToken(t);
+    await backupToGistNow();
+    toast('バックアップしました');
+  };
+  openSheet('backupOverlay');
 }
 
 /* ---------- column definitions ---------- */
@@ -1069,6 +1185,7 @@ document.querySelectorAll('.tab').forEach(t=>{
 document.getElementById('searchInput').oninput = (e)=>{ searchText = e.target.value; render(); };
 document.getElementById('sortSelect').onchange = (e)=>{ sortKey[activeTab] = e.target.value; render(); };
 document.getElementById('colBtn').onclick = openColumnEditor;
+document.getElementById('backupBtn').onclick = openBackupSettings;
 document.getElementById('fetchBtn').onclick = ()=>{ fetchPrices(); fetchAllNews(); };
 document.getElementById('addBtn').onclick = ()=>openForm(activeTab, null);
 document.getElementById('exportBtn').onclick = exportJSON;
@@ -1078,6 +1195,7 @@ document.getElementById('importFile').onchange = (e)=>{ if(e.target.files[0]) im
 /* ---------- init ---------- */
 render();
 if(state.watchlist.length || state.holdings.length || state.transactions.length){ fetchPrices(); fetchAllNews(); }
+checkAutoRestore();
 </script>
 </body>
 </html>
