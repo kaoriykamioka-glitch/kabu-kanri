@@ -167,7 +167,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-17-23';
+const BUILD_ID = 'kabu-kanri-2026-08-24-24';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -466,25 +466,42 @@ function parseYahooUrl(text){
   const market = suffix==='T' ? 'JP' : 'US';
   return {ticker:symbol, market};
 }
+/* Free CORS proxies for browser-side fetches keep dying (allorigins went flaky, then
+   corsproxy.io started requiring a paid API key) — try a short list in order so one
+   proxy going down doesn't break price/news/name lookups again. */
+const CORS_PROXY_BUILDERS = [
+  target => 'https://proxy.cors.sh/'+target,
+  target => 'https://api.allorigins.win/raw?url='+encodeURIComponent(target),
+  target => 'https://api.codetabs.com/v1/proxy?quest='+target,
+];
+async function fetchViaProxy(target, timeoutMs){
+  let lastErr = new Error('no proxy available');
+  for(const build of CORS_PROXY_BUILDERS){
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), timeoutMs||10000);
+    try{
+      const res = await fetch(build(target), {signal:ctrl.signal});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      return res;
+    }catch(e){
+      lastErr = e;
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+  throw lastErr;
+}
 async function fetchCompanyName(market, ticker){
   const ysym = market==='JP' ? (ticker+'.T') : ticker;
   const target = 'https://finance.yahoo.co.jp/quote/'+encodeURIComponent(ysym);
-  const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
-  const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), 8000);
-  try{
-    const res = await fetch(proxied, {signal:ctrl.signal});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const html = await res.text();
-    const m = html.match(/<title>([^<]+)<\/title>/);
-    if(!m) throw new Error('no title');
-    let name = m[1].split('【')[0].trim();
-    name = name.replace(/[\(（]株[\)）]$/,'').trim();
-    if(!name) throw new Error('empty name');
-    return name;
-  }finally{
-    clearTimeout(timer);
-  }
+  const res = await fetchViaProxy(target, 8000);
+  const html = await res.text();
+  const m = html.match(/<title>([^<]+)<\/title>/);
+  if(!m) throw new Error('no title');
+  let name = m[1].split('【')[0].trim();
+  name = name.replace(/[\(（]株[\)）]$/,'').trim();
+  if(!name) throw new Error('empty name');
+  return name;
 }
 
 /* ---------- calculations ---------- */
@@ -538,22 +555,14 @@ function transactionMetrics(item){
 /* ---------- price fetch ---------- */
 async function fetchOneQuote(ysym){
   const target = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ysym);
-  const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
-  const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), 10000);
-  try{
-    const res = await fetch(proxied, {signal:ctrl.signal});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    const meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
-    if(!meta || meta.regularMarketPrice==null) throw new Error('no price');
-    const price = meta.regularMarketPrice;
-    const prevClose = meta.chartPreviousClose;
-    const changePct = prevClose ? (price-prevClose)/prevClose*100 : null;
-    return {price, changePct};
-  }finally{
-    clearTimeout(timer);
-  }
+  const res = await fetchViaProxy(target, 10000);
+  const data = await res.json();
+  const meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
+  if(!meta || meta.regularMarketPrice==null) throw new Error('no price');
+  const price = meta.regularMarketPrice;
+  const prevClose = meta.chartPreviousClose;
+  const changePct = prevClose ? (price-prevClose)/prevClose*100 : null;
+  return {price, changePct};
 }
 async function fetchPrices(){
   const symMap = {};
@@ -605,21 +614,13 @@ let chartCurrentItem = null;
 async function fetchHistory(market, ticker, range, interval){
   const ysym = market==='JP' ? (ticker+'.T') : ticker;
   const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ysym)}?range=${range}&interval=${interval}`;
-  const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
-  const ctrl = new AbortController();
-  const timer = setTimeout(()=>ctrl.abort(), 10000);
-  try{
-    const res = await fetch(proxied, {signal:ctrl.signal});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    const result = data && data.chart && data.chart.result && data.chart.result[0];
-    if(!result) throw new Error('no data');
-    const timestamps = result.timestamp || [];
-    const closes = (result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close) || [];
-    return timestamps.map((t,i)=>({t, close:closes[i]})).filter(p=>p.close!=null);
-  }finally{
-    clearTimeout(timer);
-  }
+  const res = await fetchViaProxy(target, 10000);
+  const data = await res.json();
+  const result = data && data.chart && data.chart.result && data.chart.result[0];
+  if(!result) throw new Error('no data');
+  const timestamps = result.timestamp || [];
+  const closes = (result.indicators && result.indicators.quote && result.indicators.quote[0] && result.indicators.quote[0].close) || [];
+  return timestamps.map((t,i)=>({t, close:closes[i]})).filter(p=>p.close!=null);
 }
 function openChart(item){
   chartCurrentItem = item;
@@ -631,17 +632,13 @@ function openChart(item){
 async function fetchNews(market, ticker){
   if(market==='JP'){
     const target = `https://finance.yahoo.co.jp/quote/${encodeURIComponent(ticker)}.T/news`;
-    const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
-    const res = await fetch(proxied);
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const res = await fetchViaProxy(target, 10000);
     const html = await res.text();
     const re = /<a href="(\/news\/detail\/[a-f0-9]+)"[^>]*>\s*<h3[^>]*>([^<]+)</g;
     return [...html.matchAll(re)].slice(0,8).map(m=>({title:m[2], url:'https://finance.yahoo.co.jp'+m[1], publisher:''}));
   }else{
     const target = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&newsCount=8`;
-    const proxied = 'https://corsproxy.io/?url='+encodeURIComponent(target);
-    const res = await fetch(proxied);
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const res = await fetchViaProxy(target, 10000);
     const data = await res.json();
     return (data.news||[]).slice(0,8).map(n=>({title:n.title, url:n.link, publisher:n.publisher||''}));
   }
