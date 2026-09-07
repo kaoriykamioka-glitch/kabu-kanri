@@ -167,7 +167,7 @@ td.news-cell a:hover{color:var(--accent);text-decoration:underline;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BUILD_ID = 'kabu-kanri-2026-08-24-24';
+const BUILD_ID = 'kabu-kanri-2026-09-07-25';
 (function(){
   try{
     if(sessionStorage.getItem('kabu-build-checked')) return;
@@ -467,12 +467,17 @@ function parseYahooUrl(text){
   return {ticker:symbol, market};
 }
 /* Free CORS proxies for browser-side fetches keep dying (allorigins went flaky, then
-   corsproxy.io started requiring a paid API key) — try a short list in order so one
-   proxy going down doesn't break price/news/name lookups again. */
+   corsproxy.io required a paid key, then proxy.cors.sh's domain stopped resolving
+   entirely) — try a short list in order so one proxy going down doesn't break
+   price/news/name lookups again. r.jina.ai (Jina AI's Reader API) is the primary:
+   unlike the disposable hobby proxies, it's a maintained product, but it returns
+   pages wrapped as "Title: ...\nURL Source: ...\nMarkdown Content:\n{body}" and
+   HTML pages get markdown-ified (not raw HTML) — see the extract* helpers below,
+   which tolerate either that wrapped/markdown shape or a raw passthrough proxy's
+   untouched HTML/JSON, so whichever proxy in the list actually succeeds "just works". */
 const CORS_PROXY_BUILDERS = [
-  target => 'https://proxy.cors.sh/'+target,
+  target => 'https://r.jina.ai/'+target,
   target => 'https://api.allorigins.win/raw?url='+encodeURIComponent(target),
-  target => 'https://api.codetabs.com/v1/proxy?quest='+target,
 ];
 async function fetchViaProxy(target, timeoutMs){
   let lastErr = new Error('no proxy available');
@@ -482,7 +487,7 @@ async function fetchViaProxy(target, timeoutMs){
     try{
       const res = await fetch(build(target), {signal:ctrl.signal});
       if(!res.ok) throw new Error('HTTP '+res.status);
-      return res;
+      return await res.text();
     }catch(e){
       lastErr = e;
     }finally{
@@ -491,14 +496,39 @@ async function fetchViaProxy(target, timeoutMs){
   }
   throw lastErr;
 }
+function unwrapJinaReader(text){
+  const marker = 'Markdown Content:\n';
+  const idx = text.indexOf(marker);
+  return idx>=0 ? text.slice(idx+marker.length) : text;
+}
+function extractPageTitle(text){
+  const m = text.match(/^Title:\s*(.+)$/m);
+  if(m && m[1].trim()) return m[1].trim();
+  const m2 = text.match(/<title>([^<]+)<\/title>/);
+  return m2 ? m2[1].trim() : null;
+}
+function parseJsonBody(text){
+  return JSON.parse(unwrapJinaReader(text).trim());
+}
+function extractJpNewsItems(text){
+  const mdRe = /\[([^\]]+)\]\((https:\/\/finance\.yahoo\.co\.jp\/news\/detail\/[a-f0-9]+)\)/g;
+  const mdMatches = [...text.matchAll(mdRe)];
+  if(mdMatches.length>0){
+    return mdMatches.slice(0,8).map(m=>{
+      const parts = m[1].split(' * ');
+      return {title:parts[0].trim(), url:m[2], publisher:(parts[2]||'').trim()};
+    });
+  }
+  const htmlRe = /<a href="(\/news\/detail\/[a-f0-9]+)"[^>]*>\s*<h3[^>]*>([^<]+)</g;
+  return [...text.matchAll(htmlRe)].slice(0,8).map(m=>({title:m[2], url:'https://finance.yahoo.co.jp'+m[1], publisher:''}));
+}
 async function fetchCompanyName(market, ticker){
   const ysym = market==='JP' ? (ticker+'.T') : ticker;
   const target = 'https://finance.yahoo.co.jp/quote/'+encodeURIComponent(ysym);
-  const res = await fetchViaProxy(target, 8000);
-  const html = await res.text();
-  const m = html.match(/<title>([^<]+)<\/title>/);
-  if(!m) throw new Error('no title');
-  let name = m[1].split('【')[0].trim();
+  const text = await fetchViaProxy(target, 10000);
+  const title = extractPageTitle(text);
+  if(!title) throw new Error('no title');
+  let name = title.split('【')[0].trim();
   name = name.replace(/[\(（]株[\)）]$/,'').trim();
   if(!name) throw new Error('empty name');
   return name;
@@ -555,8 +585,8 @@ function transactionMetrics(item){
 /* ---------- price fetch ---------- */
 async function fetchOneQuote(ysym){
   const target = 'https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ysym);
-  const res = await fetchViaProxy(target, 10000);
-  const data = await res.json();
+  const text = await fetchViaProxy(target, 10000);
+  const data = parseJsonBody(text);
   const meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
   if(!meta || meta.regularMarketPrice==null) throw new Error('no price');
   const price = meta.regularMarketPrice;
@@ -614,8 +644,8 @@ let chartCurrentItem = null;
 async function fetchHistory(market, ticker, range, interval){
   const ysym = market==='JP' ? (ticker+'.T') : ticker;
   const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ysym)}?range=${range}&interval=${interval}`;
-  const res = await fetchViaProxy(target, 10000);
-  const data = await res.json();
+  const text = await fetchViaProxy(target, 10000);
+  const data = parseJsonBody(text);
   const result = data && data.chart && data.chart.result && data.chart.result[0];
   if(!result) throw new Error('no data');
   const timestamps = result.timestamp || [];
@@ -632,14 +662,12 @@ function openChart(item){
 async function fetchNews(market, ticker){
   if(market==='JP'){
     const target = `https://finance.yahoo.co.jp/quote/${encodeURIComponent(ticker)}.T/news`;
-    const res = await fetchViaProxy(target, 10000);
-    const html = await res.text();
-    const re = /<a href="(\/news\/detail\/[a-f0-9]+)"[^>]*>\s*<h3[^>]*>([^<]+)</g;
-    return [...html.matchAll(re)].slice(0,8).map(m=>({title:m[2], url:'https://finance.yahoo.co.jp'+m[1], publisher:''}));
+    const text = await fetchViaProxy(target, 10000);
+    return extractJpNewsItems(text);
   }else{
     const target = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&newsCount=8`;
-    const res = await fetchViaProxy(target, 10000);
-    const data = await res.json();
+    const text = await fetchViaProxy(target, 10000);
+    const data = parseJsonBody(text);
     return (data.news||[]).slice(0,8).map(n=>({title:n.title, url:n.link, publisher:n.publisher||''}));
   }
 }
